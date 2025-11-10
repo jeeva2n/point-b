@@ -1,0 +1,201 @@
+/* Main Header Container */
+.header {
+  background-color: #f2f4f7;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  padding: 10px 25px;
+  margin: 20px auto;
+  width: 90%;
+  max-width: 1400px;
+  font-family: "Poppins", sans-serif;
+}
+
+/* Flex Layout */
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Logo */
+.logo-box {
+  background-color: #004aad;
+  color: #fff;
+  font-weight: 800;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logo-box:hover {
+  background-color: #003c91;
+}
+
+/* Navigation Menu */
+.main-nav ul {
+  display: flex;
+  list-style: none;
+  gap: 30px;
+  margin: 0;
+  padding: 0;
+}
+
+.main-nav a {
+  text-decoration: none;
+  color: #111;
+  font-weight: 500;
+  font-size: 14px;
+  position: relative;
+}
+
+.main-nav a::after {
+  content: "";
+  position: absolute;
+  right: -15px;
+  top: 4px;
+  width: 1px;
+  height: 14px;
+  background-color: #ccc;
+}
+
+.main-nav li:last-child a::after {
+  display: none;
+}
+
+.main-nav a:hover {
+  color: #004aad;
+}
+
+/* Icons / Actions */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.language-selector,
+.contact-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #222;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.language-selector:hover,
+.contact-button:hover {
+  color: #004aad;
+}
+
+.dropdown-arrow {
+  font-size: 10px;
+}
+
+/* Dropdown Menu */
+.language-dropdown {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  width: 150px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.language-option {
+  padding: 10px 15px;
+  font-size: 14px;
+  color: #333;
+  transition: background 0.3s ease;
+}
+
+.language-option:hover {
+  background-color: #f3f6fa;
+}
+
+/* Contact Modal Overlay */
+.contact-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+/* Contact Form Box */
+.contact-modal {
+  background-color: white;
+  border-radius: 10px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #333;
+}
+
+/* Contact Form Fields */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.3rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.submit-btn {
+  padding: 0.8rem;
+  background-color: #004aad;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.submit-btn:hover {
+  background-color: #003c91;
+}
