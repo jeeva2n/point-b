@@ -14,6 +14,7 @@ function Header() {
   return (
     <header className="header">
       <div className="header-container">
+   
         {/* Logo */}
         <div className="logo">
           <Link to="/">

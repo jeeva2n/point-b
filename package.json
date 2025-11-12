@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "sim",
   "version": "1.0.0",
   "private": true,
@@ -17,5 +18,9 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^5.0.4",
     "vite": "^7.0.0"
+=======
+  "dependencies": {
+    "lucide-react": "^0.553.0"
+>>>>>>> 31a2bbb6850d1de841cf2ad29ca42a3186a34c1b
   }
 }
