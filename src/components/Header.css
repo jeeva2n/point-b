@@ -5,7 +5,7 @@
   background-color: #edeff3;
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  padding: 10px 25px;
+  padding: 20px 25px;
   margin: 20px auto;
   width: 90%;
   max-width: 1400px;
@@ -19,6 +19,7 @@
   align-items: center;
   justify-content: space-between;
   position: relative;
+
 }
 
 /* ============================
@@ -30,7 +31,7 @@
 }
 
 .logo-image {
-  height: 50px;
+  height: 40px;
   width: auto;
   object-fit: contain;
   transition: transform 0.2s ease;
@@ -128,7 +129,8 @@
 
 .contact-panel-dropdown {
   position: fixed;
-  top: 120px;
+  top: 100px;
+  margin-top: -60px;
   left: 50%;
   transform: translateX(-50%) translateY(-20px);
   width: 90vw;
