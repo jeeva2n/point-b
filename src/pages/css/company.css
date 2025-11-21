@@ -5,12 +5,14 @@
 /* Import modern fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* CSS Variables */
+/* CSS Variables - Blue Professional Theme */
 :root {
-  --primary-gradient-start: #0a0f14;
-  --primary-gradient-mid: #1a1f26;
-  --accent-green: #8eff00;
-  --accent-cyan: #00ff88;
+  --primary-gradient-start: #0a1420;
+  --primary-gradient-mid: #1a2638;
+  --accent-blue: #0066ff;
+  --accent-blue-light: #3399ff;
+  --accent-blue-dark: #0044cc;
+  --accent-cyan: #00aaff;
   --text-dark: #2c3e50;
   --text-light: #666;
   --white: #ffffff;
@@ -63,9 +65,9 @@
   width: 100%;
   height: 500px;
   background: linear-gradient(135deg, 
-    rgba(10, 15, 20, 0.95) 0%, 
-    rgba(26, 31, 38, 0.9) 50%, 
-    rgba(10, 15, 20, 0.95) 100%),
+    rgba(10, 20, 32, 0.95) 0%, 
+    rgba(26, 38, 56, 0.9) 50%, 
+    rgba(10, 20, 32, 0.95) 100%),
     url("https://svkelectronics.com/wp-content/uploads/2024/12/DALL%C2%B7E-2025-01-27-15.50.08-A-visually-engaging-wallpaper-showcasing-Non-Destructive-Testing-NDT-case-studies.-The-design-should-include-a-collage-of-NDT-techniques-such-as-ult.webp");
   background-size: cover;
   background-position: center;
@@ -90,7 +92,7 @@
   height: 100%;
   background: radial-gradient(
     circle at 20% 80%, 
-    rgba(142, 255, 0, 0.15) 0%, 
+    rgba(0, 102, 255, 0.15) 0%, 
     transparent 50%
   );
   animation: floatingLight 10s ease-in-out infinite;
@@ -113,7 +115,7 @@
   background: linear-gradient(
     45deg,
     transparent 40%,
-    rgba(142, 255, 0, 0.1) 50%,
+    rgba(0, 102, 255, 0.1) 50%,
     transparent 60%
   );
   animation: shimmer 3s infinite;
@@ -136,13 +138,13 @@
 .header-subtitle {
   font-size: 1.4rem;
   font-weight: 300;
-  color: var(--accent-green);
+  color: var(--accent-blue-light);
   text-transform: uppercase;
   letter-spacing: 4px;
   margin-bottom: 1rem;
   opacity: 0;
   animation: fadeUp3D 1s ease 0.3s forwards;
-  text-shadow: 0 0 20px rgba(142, 255, 0, 0.5);
+  text-shadow: 0 0 20px rgba(0, 102, 255, 0.5);
 }
 
 .header-title {
@@ -182,7 +184,7 @@
 .header-divider {
   width: 80px;
   height: 3px;
-  background: linear-gradient(45deg, var(--accent-green), var(--accent-cyan));
+  background: linear-gradient(45deg, var(--accent-blue-light), var(--accent-cyan));
   margin: 0 auto 2rem auto;
   opacity: 0;
   animation: expandWidth 1s ease 0.9s forwards;
@@ -268,7 +270,7 @@
   transform: translateX(-50%);
   width: 80px;
   height: 4px;
-  background: linear-gradient(45deg, var(--accent-green), var(--accent-cyan));
+  background: linear-gradient(45deg, var(--accent-blue-light), var(--accent-cyan));
   border-radius: 2px;
   transition: width 0.3s ease;
 }
@@ -315,7 +317,7 @@
   background: linear-gradient(
     45deg,
     transparent 30%,
-    rgba(142, 255, 0, 0.1) 50%,
+    rgba(0, 102, 255, 0.1) 50%,
     transparent 70%
   );
   transition: all 0.5s;
@@ -335,14 +337,14 @@
   transform: translateY(-10px) rotateX(-5deg) translateZ(20px);
   box-shadow: 
     0 20px 50px var(--shadow-dark),
-    0 0 30px rgba(142, 255, 0, 0.1);
-  border-color: var(--accent-green);
+    0 0 30px rgba(0, 102, 255, 0.1);
+  border-color: var(--accent-blue);
 }
 
 .feature-icon {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+  background: linear-gradient(135deg, var(--accent-blue-light), var(--accent-blue));
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -353,7 +355,7 @@
   font-weight: bold;
   transition: all 0.3s ease;
   position: relative;
-  box-shadow: 0 5px 15px rgba(142, 255, 0, 0.3);
+  box-shadow: 0 5px 15px rgba(0, 102, 255, 0.3);
 }
 
 /* Icon pulse animation */
@@ -363,7 +365,7 @@
   width: 100%;
   height: 100%;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+  background: linear-gradient(135deg, var(--accent-blue-light), var(--accent-blue));
   z-index: -1;
   animation: iconPulse 2s infinite;
 }
@@ -381,7 +383,7 @@
 
 .feature-card:hover .feature-icon {
   transform: rotate(360deg) scale(1.1);
-  box-shadow: 0 8px 25px rgba(142, 255, 0, 0.5);
+  box-shadow: 0 8px 25px rgba(0, 102, 255, 0.5);
 }
 
 .feature-content h3 {
@@ -393,7 +395,7 @@
 }
 
 .feature-card:hover .feature-content h3 {
-  color: var(--accent-green);
+  color: var(--accent-blue);
 }
 
 /* ===========================================
@@ -419,7 +421,7 @@
   left: -100%;
   width: 300%;
   height: 300%;
-  background: radial-gradient(circle, rgba(142, 255, 0, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 102, 255, 0.1) 0%, transparent 70%);
   animation: rotateGradient 10s linear infinite;
   pointer-events: none;
 }
@@ -476,10 +478,10 @@
 .stat-number {
   font-size: 3.5rem;
   font-weight: 700;
-  color: var(--accent-green);
+  color: var(--accent-blue-light);
   margin-bottom: 0.5rem;
   line-height: 1;
-  text-shadow: 0 0 30px rgba(142, 255, 0, 0.5);
+  text-shadow: 0 0 30px rgba(0, 102, 255, 0.5);
   display: inline-block;
   position: relative;
 }
@@ -493,7 +495,7 @@
   width: 100%;
   height: 100%;
   color: transparent;
-  background: linear-gradient(45deg, var(--accent-green), var(--accent-cyan));
+  background: linear-gradient(45deg, var(--accent-blue-light), var(--accent-cyan));
   background-clip: text;
   -webkit-background-clip: text;
   animation: numberGlow 2s ease-in-out infinite;
@@ -552,8 +554,8 @@
   transform: translateY(-8px) rotateY(5deg) translateZ(50px);
   box-shadow: 
     0 20px 50px var(--shadow-dark),
-    -10px 10px 30px rgba(142, 255, 0, 0.1);
-  border-color: var(--accent-green);
+    -10px 10px 30px rgba(0, 102, 255, 0.1);
+  border-color: var(--accent-blue);
 }
 
 /* Morphing background shape */
@@ -564,7 +566,7 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(142, 255, 0, 0.1), transparent);
+  background: radial-gradient(circle, rgba(0, 102, 255, 0.1), transparent);
   opacity: 0;
   transition: opacity 0.3s ease;
   animation: morph 8s ease-in-out infinite;
@@ -610,7 +612,7 @@
 
 .industry-card:hover .industry-icon {
   transform: scale(1.2) rotate(10deg);
-  filter: drop-shadow(0 5px 10px rgba(142, 255, 0, 0.3));
+  filter: drop-shadow(0 5px 10px rgba(0, 102, 255, 0.3));
   animation: none;
 }
 
@@ -631,13 +633,13 @@
 
 /* Neon text effect */
 .neon-text {
-  color: var(--accent-green);
+  color: var(--accent-blue-light);
   text-shadow: 
     0 0 5px #fff,
     0 0 10px #fff,
-    0 0 15px var(--accent-green),
-    0 0 20px var(--accent-green),
-    0 0 35px var(--accent-green);
+    0 0 15px var(--accent-blue-light),
+    0 0 20px var(--accent-blue-light),
+    0 0 35px var(--accent-blue-light);
   animation: neonFlicker 1.5s infinite alternate;
 }
 
@@ -647,18 +649,18 @@
     text-shadow: 
       0 0 5px #fff,
       0 0 10px #fff,
-      0 0 15px var(--accent-green),
-      0 0 20px var(--accent-green),
-      0 0 35px var(--accent-green);
+      0 0 15px var(--accent-blue-light),
+      0 0 20px var(--accent-blue-light),
+      0 0 35px var(--accent-blue-light);
   }
   50% {
     opacity: 0.8;
     text-shadow: 
       0 0 2px #fff,
       0 0 5px #fff,
-      0 0 8px var(--accent-green),
-      0 0 10px var(--accent-green),
-      0 0 20px var(--accent-green);
+      0 0 8px var(--accent-blue-light),
+      0 0 10px var(--accent-blue-light),
+      0 0 20px var(--accent-blue-light);
   }
 }
 
@@ -682,7 +684,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+  background: linear-gradient(90deg, transparent, var(--accent-blue-light), transparent);
   animation: footerGlow 3s ease-in-out infinite;
 }
 
@@ -770,6 +772,6 @@ html {
 /* Focus states for accessibility */
 .feature-card:focus-within,
 .industry-card:focus-within {
-  outline: 2px solid var(--accent-green);
+  outline: 2px solid var(--accent-blue);
   outline-offset: 4px;
 }

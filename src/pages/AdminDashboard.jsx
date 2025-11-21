@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "./AdminDashboard.css";
+import "./css/AdminDashboard.css";
 
 function AdminDashboard() {
   const [products, setProducts] = useState([]);

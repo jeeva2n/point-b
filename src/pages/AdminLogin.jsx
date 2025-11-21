@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "./AdminLogin.css";
+import "./css/AdminLogin.css";
 
 function AdminLogin() {
   const navigate = useNavigate();

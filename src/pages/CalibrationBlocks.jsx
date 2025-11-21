@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import ProductModal from "../components/ProductModal";
-import "./CalibrationBlocks.css";
+import "./css/CalibrationBlocks.css";
 import SimpleProductModal from "./SimpleProductModal";
 
 function CalibrationBlocks() {

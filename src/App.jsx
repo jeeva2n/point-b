@@ -7,16 +7,14 @@ import CalibrationBlocks from './pages/CalibrationBlocks';
 import ProductCatalogue from './pages/ProductCatalogue';
 import Company from './pages/Company';
 import Career from './pages/Career';
-import Service from './pages/Service';
-import Downloads from './pages/Downloads';
 import Blog from './pages/Blog';
 import PrivacyPolicy from './pages/PrivacyPolicy';
-import Imprint from './pages/Imprint';
-import GTC from './pages/GTC';
-import AdminLogin from './pages/AdminLogin';
+import AccessoriesDocs from './pages/AccessoriesDocs'; // ADD THIS IMPORT
 import AdminDashboard from './pages/AdminDashboard';
 import './App.css';
 import FlawedSpecimens from "./pages/FlawedSpecimens";
+import DownloadsDocs from './pages/DownloadsDocs';
+import ReachOut from './pages/ReachOut';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -42,14 +40,19 @@ function App() {
           <Route path="/product-catalogue" element={<ProductCatalogue />} />
           <Route path="/company" element={<Company />} />
           <Route path="/career" element={<Career />} />
-          <Route path="/service" element={<Service />} />
-          <Route path="/downloads" element={<Downloads />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/imprint" element={<Imprint />} />
-          <Route path="/gtc" element={<GTC />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        
+          <Route path="/access-docs" element={<AccessoriesDocs />} />
+          <Route path="/downloads-docs" element={<DownloadsDocs />} />
+          <Route path="/reach-out" element={<ReachOut />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
       <Footer />

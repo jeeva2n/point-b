@@ -1,4 +1,4 @@
-import { FaLinkedin, FaWhatsapp, FaFacebookF, FaYoutube } from "react-icons/fa";
+import { FaLinkedin, FaWhatsapp, FaFacebookF } from "react-icons/fa"; // Removed FaYoutube
 import { Link } from "react-router-dom";
 import "./Footer.css";
 
@@ -9,12 +9,11 @@ function Footer() {
         {/* Navigation Links */}
         <nav className="footer-nav">
           <ul>
-            <li><Link to="/service">Service</Link></li>
-            <li><Link to="/downloads">Downloads</Link></li>
+            <li><Link to="/access-docs">Accessories & Docs</Link></li>
+            <li><Link to="/downloads-docs">Downloads & Docs</Link></li>
+            <li><Link to="/reach-out">Reach Out</Link></li>
             <li><Link to="/blog">Blog</Link></li>
             <li><Link to="/privacy-policy">Privacy Policy</Link></li>
-            <li><Link to="/imprint">Imprint</Link></li>
-            <li><Link to="/gtc">GTC & Conditions of Purchase</Link></li>
           </ul>
         </nav>
 
@@ -28,7 +27,7 @@ function Footer() {
           >
             <FaLinkedin />
           </a>
-          <a href="https://wa.me/8778423621" target="_blank" rel="noopener noreferrer" className="social-icon FaWhatsapp">
+          <a href="https://wa.me/8778423621" target="_blank" rel="noopener noreferrer" className="social-icon whatsapp">
             <FaWhatsapp />
           </a>
           <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="social-icon facebook">

@@ -170,10 +170,10 @@ function ProductCatalogue() {
         }
       });
     };
-    
+
     window.addEventListener('scroll', reveal);
     reveal();
-    
+
     return () => window.removeEventListener('scroll', reveal);
   }, []);
 
@@ -202,7 +202,7 @@ function ProductCatalogue() {
 
   const handlePrevImage = () => {
     if (selectedProduct && selectedProduct.images) {
-      setSelectedImageIndex((prev) => 
+      setSelectedImageIndex((prev) =>
         prev === 0 ? selectedProduct.images.length - 1 : prev - 1
       );
     }
@@ -210,7 +210,7 @@ function ProductCatalogue() {
 
   const handleNextImage = () => {
     if (selectedProduct && selectedProduct.images) {
-      setSelectedImageIndex((prev) => 
+      setSelectedImageIndex((prev) =>
         prev === selectedProduct.images.length - 1 ? 0 : prev + 1
       );
     }
@@ -227,14 +227,16 @@ function ProductCatalogue() {
   return (
     <div className="product-catalogue-page">
       <div className="page-container">
-        
-        {/* HEADER IMAGE TRAIL */}
+
+        {/* HEADER IMAGE TRAIL - CORRECTED OVERLAY ALIGNMENT */}
         <div className="product-catalogue-header-trail-container">
           <ImageTrail key={imageTrailKey} items={imageItems} variant={6} />
-          <div className="overlay">
+
+          <div className="overlay-content">
             <h1>Product Catalogue</h1>
             <p>Support and services for DAKS TOOLS equipment</p>
           </div>
+
         </div>
 
         {/* INTRO SECTION */}
@@ -244,7 +246,7 @@ function ProductCatalogue() {
               <h2>Comprehensive Support Solutions</h2>
               <p>
                 At DAKS TOOLS, we're committed to providing outstanding service
-                throughout the lifecycle of your equipment. Our global service network 
+                throughout the lifecycle of your equipment. Our global service network
                 ensures prompt assistance wherever you are located.
               </p>
             </div>
@@ -276,11 +278,6 @@ function ProductCatalogue() {
           </div>
         </div>
 
-        {/* FOOTER */}
-        <div className="product-catalogue-footer">
-          <p>© 2024 DAKS TOOLS. All rights reserved.</p>
-        </div>
-
         {/* PRODUCT DETAILS MODAL */}
         {isModalOpen && selectedProduct && (
           <div className="product-catalogue-modal-overlay" onClick={closeModal}>
@@ -293,9 +290,9 @@ function ProductCatalogue() {
                 {/* Enhanced Image Gallery */}
                 <div className="modal-image-gallery">
                   <div className="main-image-container">
-                    <img 
-                      src={selectedProduct.images ? selectedProduct.images[selectedImageIndex] : selectedProduct.image} 
-                      alt={`${selectedProduct.title} - Image ${selectedImageIndex + 1}`} 
+                    <img
+                      src={selectedProduct.images ? selectedProduct.images[selectedImageIndex] : selectedProduct.image}
+                      alt={`${selectedProduct.title} - Image ${selectedImageIndex + 1}`}
                       className="modal-main-image"
                       onClick={handleImageClick}
                     />
@@ -309,7 +306,7 @@ function ProductCatalogue() {
                       </>
                     )}
                   </div>
-                  
+
                   {/* Thumbnail Strip */}
                   {selectedProduct.images && selectedProduct.images.length > 1 && (
                     <div className="thumbnail-container">
@@ -326,9 +323,9 @@ function ProductCatalogue() {
                   )}
 
                   {/* 360 View Indicator */}
-                  <div className="view-indicator">
+                  <div className="view-inicator">
                     {/* <span className="icon-360">360°</span> */}
-                    {/* <span className="view-text">Click and drag to rotate</span> */}
+                    {/* <span className="view-text">Click image to zoom</span> */}
                   </div>
                 </div>
 
@@ -361,8 +358,8 @@ function ProductCatalogue() {
             {/* Fullscreen View */}
             {isFullscreen && (
               <div className="fullscreen-overlay" onClick={closeFullscreen}>
-                <img 
-                  src={selectedProduct.images ? selectedProduct.images[selectedImageIndex] : selectedProduct.image} 
+                <img
+                  src={selectedProduct.images ? selectedProduct.images[selectedImageIndex] : selectedProduct.image}
                   alt="Fullscreen view"
                   className="fullscreen-image"
                 />

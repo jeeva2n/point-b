@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import "./company.css";
+import "./css/company.css";
 
 function Company() {
   useEffect(() => {

@@ -1,4 +1,4 @@
-import './SimpleProductModal.css';
+import './css/SimpleProductModal.css';
 
 function SimpleProductModal({ product, onClose }) {
   if (!product) return null;
@@ -26,3 +26,6 @@ function SimpleProductModal({ product, onClose }) {
 }
 
 export default SimpleProductModal;
+
+
+

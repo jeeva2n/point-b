@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import SimpleProductModal from "./SimpleProductModal";
-import "./FlawedSpecimens.css";
+import "./css/FlawedSpecimens.css";
 
 function BroomBrush() {
   const [products, setProducts] = useState([]);
@@ -162,11 +162,6 @@ function BroomBrush() {
             )}
           </div>
         )}
-
-        {/* Footer */}
-        <div className="page-footer">
-          <p>© 2024 DAKS TOOLS. All rights reserved.</p>
-        </div>
 
         {/* Simple Modal */}
         {selectedProductId && (
