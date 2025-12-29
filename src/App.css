@@ -1,13 +1,17 @@
+/* ------------------------------------------------------ */
+/* GLOBAL RESET & BASE STYLES                             */
+/* ------------------------------------------------------ */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
 
+
+/* ------------------------------------------------------ */
+/* APP CONTAINER                                          */
+/* ------------------------------------------------------ */
 .app {
   display: flex;
   flex-direction: column;
@@ -18,8 +22,135 @@ body {
   flex: 1;
 }
 
+/* ------------------------------------------------------ */
+/* GLOBAL PAGE PADDING - 100px LEFT & RIGHT               */
+/* ------------------------------------------------------ */
+#root {
+  padding-left: 100px;
+  padding-right: 100px;
+  box-sizing: border-box;
+}
 
+/* ------------------------------------------------------ */
+/* HEADER ADJUSTMENTS FOR PADDING                         */
+/* ------------------------------------------------------ */
+.header {
+  width: 100%;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
 
-*{
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+/* ------------------------------------------------------ */
+/* FOOTER ADJUSTMENTS FOR PADDING                         */
+/* ------------------------------------------------------ */
+.footer {
+  width: 100%;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ------------------------------------------------------ */
+/* RESPONSIVE - REDUCE PADDING ON SMALLER SCREENS         */
+/* ------------------------------------------------------ */
+
+/* Large Tablets (1024px and below) */
+@media (max-width: 1024px) {
+  #root {
+    padding-left: 60px;
+    padding-right: 60px;
+  }
+}
+
+/* Tablets (900px and below) */
+@media (max-width: 900px) {
+  #root {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+
+  .header {
+    width: calc(100% + 80px);
+    margin-left: -40px;
+    margin-right: -40px;
+    border-radius: 0;
+  }
+
+  .footer {
+    width: calc(100% + 80px);
+    margin-left: -40px;
+    margin-right: -40px;
+    border-radius: 0;
+  }
+}
+
+/* Mobile (768px and below) */
+@media (max-width: 768px) {
+  #root {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .header {
+    width: calc(100% + 10px);
+    margin-left: -5px;
+    margin-right: 34px;
+    border-radius: 34px;
+  }
+
+  .footer {
+    width: calc(100% + 10px);
+    margin-left: -5px;
+    margin-right: 34px;
+    border-radius: 34px;
+  }
+
+  /* Home page cards - full bleed on mobile */
+  .home-container {
+    margin-left: -20px;
+    margin-right: -20px;
+    width: calc(100% + 40px);
+  }
+}
+
+/* Small Mobile (480px and below) */
+@media (max-width: 480px) {
+  #root {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  .header {
+    width: calc(100% + 30px);
+    margin-left: -15px;
+    margin-right: -15px;
+      
+  }
+
+  .footer {
+    width: calc(100% + 30px);
+    margin-left: -15px;
+    margin-right: -15px;
+  
+  }
+
+  .home-container {
+    margin-left: -15px;
+    margin-right: -15px;
+    width: calc(100% + 30px);
+    border-radius: 34px;
+  }
+}
+
+/* ------------------------------------------------------ */
+/* SAFE AREA FOR NOTCHED PHONES                           */
+/* ------------------------------------------------------ */
+@supports (padding: max(0px)) {
+  @media (max-width: 768px) {
+    #root {
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
+    }
+  }
 }

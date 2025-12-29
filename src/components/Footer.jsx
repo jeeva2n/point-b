@@ -1,4 +1,4 @@
-import { FaLinkedin, FaWhatsapp, FaFacebookF } from "react-icons/fa"; // Removed FaYoutube
+import { FaLinkedin, FaWhatsapp, FaFacebookF } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import "./Footer.css";
 
@@ -24,13 +24,26 @@ function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             className="social-icon linkedin"
+            aria-label="LinkedIn"
           >
             <FaLinkedin />
           </a>
-          <a href="https://wa.me/8778423621" target="_blank" rel="noopener noreferrer" className="social-icon whatsapp">
+          <a 
+            href="https://wa.me/8778423621" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="social-icon whatsapp"
+            aria-label="WhatsApp"
+          >
             <FaWhatsapp />
           </a>
-          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="social-icon facebook">
+          <a 
+            href="https://facebook.com" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="social-icon facebook"
+            aria-label="Facebook"
+          >
             <FaFacebookF />
           </a>
           <a
@@ -38,6 +51,7 @@ function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             className="social-icon alpha-sonix"
+            aria-label="Alpha Sonix"
           >
             <span className="as-icon">AS</span>
           </a>

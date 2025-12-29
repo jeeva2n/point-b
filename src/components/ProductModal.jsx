@@ -13,13 +13,13 @@ function ProductModal({ productId, onClose }) {
 
   const fetchProductDetails = async () => {
     try {
-      const response = await fetch(`http://localhost:5001/api/products/${productId}`);
+      const response = await fetch(`http://192.168.1.6:5000/api/products/${productId}`);
       const data = await response.json();
       console.log('Product details:', data); // Debug log
       
       if (data.success) {
         setProduct(data.product);
-      }
+      }   
       setLoading(false);
     } catch (error) {
       console.error('Error fetching product details:', error);
@@ -74,7 +74,7 @@ function ProductModal({ productId, onClose }) {
         <div className="modal-body">
           <div className="modal-image">
             <img 
-              src={`http://localhost:5001${product.image_url}`} 
+              src={`http://192.168.1.6:5000${product.image_url}`} 
               alt={product.name}
               onError={(e) => {
                 e.target.src = '/placeholder-image.jpg';
@@ -99,12 +99,12 @@ function ProductModal({ productId, onClose }) {
                 </>
               )}
               
-              {product.price > 0 && (
+              {/* {product.price > 0 && (
                 <div className="product-price">
                   <h3>Price</h3>
                   <p className="price-value">₹{product.price.toLocaleString()}</p>
                 </div>
-              )}
+              )} */}
               
               <div className="product-status">
                 <span className={`status-badge ${product.in_stock ? 'in-stock' : 'out-of-stock'}`}>

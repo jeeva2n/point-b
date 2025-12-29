@@ -1,0 +1,63 @@
+/* ============================
+   PAGE TRANSITION ANIMATIONS
+============================ */
+
+.page-transition {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Slide IN from LEFT */
+.page-transition.slide-in {
+  animation: slideInFromLeft 0.5s ease-out forwards;
+}
+
+/* Slide OUT to RIGHT */
+.page-transition.slide-out {
+  animation: slideOutToRight 0.5s ease-in forwards;
+}
+
+@keyframes slideInFromLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToRight {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* Alternative smoother animation with scale */
+@keyframes slideInSmooth {
+  0% {
+    opacity: 0;
+    transform: translateX(-50px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slideOutSmooth {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(50px) scale(0.98);
+  }
+}

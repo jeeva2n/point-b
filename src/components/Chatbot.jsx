@@ -1,0 +1,515 @@
+import React, { useState, useRef, useEffect } from 'react';
+import './Chatbot.css';
+
+const Chatbot = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { text: "Hello! I'm Alpha AI, your NDT assistant. Ask me anything about Non-Destructive Testing, DAKS products, or our services!", sender: 'bot' }
+  ]);
+  const [inputValue, setInputValue] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Enhanced knowledge base for NDT
+  const knowledgeBase = {
+    // General NDT
+    "who is vengat": "He is the Owner of the Alpha Sonix Company",
+    "what is ndt": "Non-Destructive Testing (NDT) is a wide group of analysis techniques used to evaluate the properties of materials, components, or systems without causing damage. It ensures structural integrity, safety, and reliability in industries like aerospace, automotive, construction, oil & gas, and manufacturing.",
+    "purpose of ndt": "The main purposes of NDT are: 1. Ensure safety of equipment and structures 2. Prevent failures and accidents 3. Improve product quality 4. Reduce maintenance costs 5. Extend service life 6. Verify compliance with standards 7. Provide quality assurance throughout product lifecycle.",
+    "importance of ndt": "NDT is crucial for: Public safety, Economic benefits through preventive maintenance, Quality control in manufacturing, Environmental protection by preventing leaks/spills, Asset management, Regulatory compliance, and Research & development.",
+    "advantages of ndt": "Advantages: No damage to tested object, Can test in-service components, Early defect detection, Cost-effective compared to destructive testing, Provides immediate results, Can inspect large areas quickly, Improves product reliability.",
+    "applications of ndt": "Applications: Aerospace (aircraft structures, engines), Automotive (weld quality, castings), Construction (bridges, buildings), Energy (pipelines, wind turbines), Manufacturing (quality control), Marine (ship hulls, offshore platforms), Railways (tracks, wheels), Power plants (boilers, turbines).",
+    "history of ndt": "NDT began with simple visual inspections in ancient times. Modern NDT evolved in early 20th century with radiography (1895), magnetic particle testing (1920s), ultrasonic testing (1940s), and eddy current testing (1950s). Today, advanced methods include phased array, digital radiography, and automated systems.",
+
+    // Alpha Sonix Company Information
+    "alpha sonix": "Alpha Sonix NDT Solutions Private Limited is a Chennai-based company providing Non-Destructive Testing (NDT) services, inspection solutions, and calibration products for industrial applications. The company focuses on safety, quality assurance, and compliance with international standards, serving industries such as oil & gas, power, manufacturing, aerospace, and infrastructure.",
+    "what is alpha sonix": "Alpha Sonix NDT Solutions Private Limited is an Indian NDT service provider and solution company headquartered in Chennai, Tamil Nadu. It offers conventional and advanced NDT services, inspection solutions, and calibration-related products for industrial quality and safety assurance.",
+    "alpha sonix company": "Alpha Sonix NDT Solutions Private Limited is a private limited company established in 2021 in Chennai, Tamil Nadu. The company specializes in NDT services, advanced inspection techniques, and industrial testing solutions across India.",
+    "alpha sonix location": "Alpha Sonix is located at No.133, Babu Garden, Cikkarayapuram, Chennai – 600069, Tamil Nadu, India.",
+    "alpha sonix services": "Alpha Sonix services include Ultrasonic Testing (UT), Phased Array Ultrasonic Testing (PAUT), Radiographic Testing (RT), Magnetic Particle Testing (MT), Liquid Penetrant Testing (PT), Eddy Current Testing (ET), third-party inspection, risk-based inspection, concrete testing, and fitness-for-service assessments.",
+    "alpha sonix ndt services": "Alpha Sonix provides comprehensive NDT services such as UT, RT, MT, PT, ET, PAUT, advanced flaw detection, and inspection services to ensure structural integrity, safety, and compliance with industry standards.",
+    "alpha sonix advanced ndt": "Advanced NDT methods at Alpha Sonix include Phased Array Ultrasonic Testing (PAUT), Near Field Array (NFA), remote visual inspection, and specialized ultrasonic inspection techniques for complex components.",
+    "alpha sonix industries": "Industries served by Alpha Sonix include oil & gas, petrochemical, power plants, aerospace, automotive, heavy engineering, fabrication, infrastructure, and manufacturing sectors.",
+    "alpha sonix inspection": "Alpha Sonix offers third-party inspection, quality assurance inspection, and condition assessment services to verify compliance with codes, standards, and customer requirements.",
+    "alpha sonix calibration": "Alpha Sonix is involved in providing calibration-related solutions and NDT reference products to support accurate inspection, equipment verification, and quality assurance.",
+    "alpha sonix management": "Alpha Sonix NDT Solutions Private Limited is managed by experienced professionals from the NDT and inspection industry, focusing on technical excellence, safety, and customer satisfaction.",
+    "alpha sonix vision": "Alpha Sonix’s vision is to deliver reliable, accurate, and high-quality NDT and inspection solutions that enhance industrial safety, asset integrity, and operational reliability.",
+    "alpha sonix mission": "The mission of Alpha Sonix is to provide dependable NDT services, adopt advanced inspection technologies, maintain high safety standards, and support customers in meeting regulatory and quality requirements.",
+    "alpha sonix chennai": "Alpha Sonix is an NDT service provider based in Chennai, Tamil Nadu, offering industrial testing, inspection, and advanced NDT solutions across India.",
+    "who owns alpha sonix": "Alpha Sonix NDT Solutions Private Limited is led by its directors and management team with strong expertise in non-destructive testing and industrial inspection services.",
+
+    // Alpha Sonix & DAKS – Relationship and Overview
+    "alpha sonix and daks": "Alpha Sonix and DAKS are Chennai-based organizations working in the field of Non-Destructive Testing (NDT). Alpha Sonix focuses on NDT services, inspection, and advanced testing solutions, while DAKS specializes in manufacturing NDT reference standards, calibration blocks, flawed specimens, and validation blocks. Together, they support inspection, calibration, training, and quality assurance needs in industry.",
+    "alpha sonix daks relationship": "Alpha Sonix and DAKS complement each other in the NDT field. Alpha Sonix provides field inspection and advanced NDT services, while DAKS manufactures precision NDT reference standards and calibration blocks used for equipment calibration, validation, and training.",
+    
+    // Alpha Sonix – Company Profile
+    "alpha sonix": "Alpha Sonix NDT Solutions Private Limited is a Chennai-based NDT service provider offering conventional and advanced non-destructive testing services, inspection solutions, and industrial testing support for sectors such as oil & gas, power, manufacturing, aerospace, and infrastructure.",
+    "what is alpha sonix": "Alpha Sonix is an NDT service company based in Chennai, Tamil Nadu, specializing in ultrasonic testing, radiographic testing, magnetic particle testing, liquid penetrant testing, phased array ultrasonic testing, and inspection services.",
+    "alpha sonix services": "Alpha Sonix services include UT, PAUT, RT, MT, PT, ET, third-party inspection, risk-based inspection, fitness-for-service assessments, concrete testing, and advanced flaw detection techniques.",
+    "alpha sonix advanced ndt": "Advanced NDT methods at Alpha Sonix include Phased Array Ultrasonic Testing (PAUT), Near Field Array (NFA), advanced ultrasonic techniques, and remote visual inspection for complex industrial components.",
+    "alpha sonix inspection": "Alpha Sonix provides inspection and quality assurance services to verify compliance with international standards such as ASME, ISO, ASTM, and customer specifications.",
+    "alpha sonix industries": "Alpha Sonix serves industries including oil & gas, petrochemical, power plants, automotive, aerospace, fabrication, heavy engineering, and infrastructure projects.",
+    "alpha sonix location": "Alpha Sonix is located at Babu Garden, Cikkarayapuram, Chennai, Tamil Nadu, India.",
+
+    // DAKS – Company Profile
+    "daks": "DAKS NDT Services is a Chennai-based manufacturer and service provider specializing in NDT reference standards, calibration blocks, flawed specimens, and validation blocks used for equipment calibration, training, and procedure qualification.",
+    "what is daks": "DAKS is an NDT-focused company that designs and manufactures precision reference standards, flawed specimens, and validation blocks to support ultrasonic testing, radiography, magnetic particle testing, penetrant testing, and advanced NDT methods.",
+    "daks products": "DAKS products include UT calibration blocks (IIW, V1/V2, DAC), PAUT and TOFD blocks, MT and PT reference standards, RT IQIs and blocks, eddy current standards, composite reference blocks, and custom-designed NDT specimens.",
+    "daks services": "DAKS services include reference standard manufacturing, flawed specimen production, validation block design, equipment calibration support, custom NDT solutions, consulting, and technical support.",
+    "daks quality": "DAKS follows ISO-compliant manufacturing processes with strict material traceability, precision machining, dimensional inspection, and documented quality assurance for all NDT reference products.",
+    // Combined Use Cases
+    "alpha sonix calibration blocks": "Alpha Sonix uses high-quality calibration blocks and reference standards, including those manufactured by DAKS, to ensure accurate NDT inspections, equipment calibration, and reliable inspection results.",
+    "daks alpha sonix ndt": "In practical NDT applications, DAKS provides the calibration and reference standards, while Alpha Sonix performs inspection and testing services using those standards in field and industrial environments.",
+    "ndt solutions chennai": "Chennai-based NDT solutions are supported by companies like Alpha Sonix and DAKS, offering a complete ecosystem of inspection services, calibration standards, validation blocks, training specimens, and technical expertise.",
+    // Ownership / Leadership (Safe & Neutral)
+    "who owns alpha sonix": "Alpha Sonix NDT Solutions Private Limited is managed by an experienced leadership team with strong expertise in non-destructive testing and industrial inspection services.",
+    "who owns daks": "DAKS NDT Services is led by professionals experienced in NDT manufacturing, calibration standards, and inspection support, focusing on quality, precision, and customer satisfaction.",
+    // Chatbot Friendly Answers
+    "alpha sonix vs daks": "Alpha Sonix and DAKS serve different but complementary roles in NDT. Alpha Sonix focuses on inspection and testing services, while DAKS focuses on manufacturing NDT reference standards, calibration blocks, and flawed specimens.",
+    "ndt services and calibration": "NDT services and calibration work together: inspection companies like Alpha Sonix perform testing, while companies like DAKS provide calibration blocks and reference standards to ensure accuracy and reliability.",
+
+
+    // NDT Methods
+    "types of ndt methods": "Common NDT methods: 1. Visual Testing (VT) 2. Liquid Penetrant Testing (PT) 3. Magnetic Particle Testing (MT) 4. Ultrasonic Testing (UT) 5. Radiographic Testing (RT) 6. Eddy Current Testing (ET) 7. Acoustic Emission Testing (AE) 8. Thermographic Testing (IRT) 9. Leak Testing (LT) 10. Vibration Analysis.",
+    "ndt methods": "Common NDT methods: 1. Visual Testing (VT) 2. Liquid Penetrant Testing (PT) 3. Magnetic Particle Testing (MT) 4. Ultrasonic Testing (UT) 5. Radiographic Testing (RT) 6. Eddy Current Testing (ET) 7. Acoustic Emission Testing (AE) 8. Thermographic Testing (IRT) 9. Leak Testing (LT) 10. Vibration Analysis.",
+
+    // Visual Testing
+    "visual testing": "Visual Testing (VT) is the simplest NDT method where inspectors examine components using eyes, sometimes aided by tools like magnifying glasses, borescopes, or cameras. Used for surface defects, alignment, cleanliness, and assembly verification.",
+    "vt": "Visual Testing (VT) is the simplest NDT method where inspectors examine components using eyes, sometimes aided by tools like magnifying glasses, borescopes, or cameras. Used for surface defects, alignment, cleanliness, and assembly verification.",
+    "visual inspection": "Visual inspection uses direct or remote viewing to assess surface conditions, alignment, cleanliness, and assembly. Equipment includes mirrors, magnifiers, borescopes, video scopes, and digital cameras. Essential first step in most NDT procedures.",
+
+    // Liquid Penetrant Testing
+    "liquid penetrant testing": "Liquid Penetrant Testing (PT) detects surface-breaking defects in non-porous materials. Process: 1. Clean surface 2. Apply penetrant 3. Wait for dwell time 4. Remove excess 5. Apply developer 6. Inspect under appropriate lighting. Types: Fluorescent (UV light) and visible dye.",
+    "pt": "Liquid Penetrant Testing (PT) detects surface-breaking defects in non-porous materials. Process: 1. Clean surface 2. Apply penetrant 3. Wait for dwell time 4. Remove excess 5. Apply developer 6. Inspect under appropriate lighting. Types: Fluorescent (UV light) and visible dye.",
+    "penetrant testing": "Penetrant Testing (PT) is sensitive to fine surface cracks like fatigue cracks, porosity, and laps. Advantages: Portable, inexpensive, good for complex shapes. Limitations: Only surface defects, requires clean surface, not for porous materials.",
+    "dye penetrant": "Dye penetrant testing uses colored or fluorescent liquids to reveal surface defects. Red dye for visible light, fluorescent for UV inspection. Sensitivity levels: Level 1 (ultra-low), Level 2 (low), Level 3 (medium), Level 4 (high).",
+
+    // Magnetic Particle Testing
+    "magnetic particle testing": "Magnetic Particle Testing (MT) detects surface and near-surface defects in ferromagnetic materials. Process: 1. Magnetize component 2. Apply magnetic particles 3. Inspect for particle accumulation at defects. Methods: Continuous (during magnetization) and residual (after magnetization).",
+    "mt": "Magnetic Particle Testing (MT) detects surface and near-surface defects in ferromagnetic materials. Process: 1. Magnetize component 2. Apply magnetic particles 3. Inspect for particle accumulation at defects. Methods: Continuous (during magnetization) and residual (after magnetization).",
+    "magnetic testing": "Magnetic Testing methods: Yoke, Prod, Coil, Central Conductor. Particle types: Dry (for rough surfaces) and Wet (for smooth surfaces). Indications: Linear (cracks, lack of fusion) and Non-linear (porosity, inclusions). Requires proper demagnetization after testing.",
+
+    // Ultrasonic Testing
+    "ultrasonic testing": "Ultrasonic Testing (UT) uses high-frequency sound waves (0.5-25 MHz) to detect internal flaws and measure thickness. Basic principles: Pulse-echo and Through-transmission. Equipment: Pulser-receiver, transducer, display unit. Applications: Weld inspection, corrosion mapping, flaw detection.",
+    "ut": "Ultrasonic Testing (UT) uses high-frequency sound waves (0.5-25 MHz) to detect internal flaws and measure thickness. Basic principles: Pulse-echo and Through-transmission. Equipment: Pulser-receiver, transducer, display unit. Applications: Weld inspection, corrosion mapping, flaw detection.",
+    "what is ultrasonic testing": "UT sends sound waves into material; defects reflect waves back to transducer. Can detect cracks, lack of fusion, porosity, inclusions, and delaminations. Provides information on defect location, size, orientation, and type.",
+    "ut applications": "Applications: Weld inspection (butt, fillet), Thickness measurement (corrosion monitoring), Composite inspection, Bond testing, Casting inspection, Forging examination, Aerospace component testing, Railway rail inspection.",
+    "ut advantages": "Advantages: High sensitivity to small defects, Depth measurement capability, Instant results, Portability, No radiation hazard, Single-sided access, Good penetration in metals. Limitations: Requires coupling medium, Training intensive, Limited for coarse grains.",
+    "ut limitations": "Limitations: Requires smooth surface, Coupling medium needed, Reference standards required, Limited for complex geometries, Attenuation in some materials, Requires skilled operators, Calibration intensive.",
+    "types of ultrasonic testing": "UT types: 1. Conventional UT (A-scan) 2. Phased Array UT (PAUT) 3. Time-of-Flight Diffraction (TOFD) 4. Guided Wave UT 5. Immersion UT 6. Automated UT 7. Long Range UT for pipelines.",
+    "paut": "Phased Array UT (PAUT) uses multiple elements fired sequentially to steer and focus beams. Benefits: Electronic scanning, Multiple angle inspections, S-scan imaging, Faster inspections, Better defect characterization, Reduced mechanical movement.",
+    "tofd": "Time-of-Flight Diffraction (TOFD) uses diffraction from defect tips for accurate sizing. Advantages: Accurate sizing (especially height), Permanent record, Good for weld inspection, Less operator dependent, High probability of detection.",
+    "ultrasound": "Ultrasound in NDT typically uses frequencies 0.5-25 MHz. Lower frequencies penetrate deeper but have lower resolution. Higher frequencies give better resolution but less penetration. Common frequencies: 2.25 MHz (general purpose), 5 MHz (higher resolution), 10 MHz (thin materials).",
+
+    // Radiographic Testing
+    "radiographic testing": "Radiographic Testing (RT) uses X-rays or gamma rays to create images of internal structure. Film radiography produces permanent records. Digital radiography (DR) and Computed radiography (CR) are modern alternatives. Shows differences in material density and thickness.",
+    "rt": "Radiographic Testing (RT) uses X-rays or gamma rays to create images of internal structure. Film radiography produces permanent records. Digital radiography (DR) and Computed radiography (CR) are modern alternatives. Shows differences in material density and thickness.",
+    "what is radiographic testing": "RT passes radiation through object onto film/detector. Dense areas or thickness variations appear lighter. Can detect volumetric defects like porosity, slag, inclusions, and some cracks if properly oriented. Provides 2D projection image.",
+    "x-ray testing": "X-ray RT uses X-ray tubes (50-450 kV for general, up to 16 MeV for thick sections). Gamma ray RT uses radioactive isotopes: Iridium-192 (common), Cobalt-60 (thicker sections), Selenium-75 (thin sections). Each has specific energy ranges and applications.",
+    "gamma ray testing": "Gamma sources: Ir-192 (energy 0.3-0.6 MeV, steel up to 75mm), Co-60 (1.17-1.33 MeV, steel up to 200mm), Se-75 (0.2-0.4 MeV, steel up to 40mm). Advantages: No power needed, compact. Disadvantages: Continuous radiation, source decay.",
+    "rt advantages": "Advantages: Permanent record, Good for volumetric defects, Works on most materials, Minimal surface preparation, Established standards. Disadvantages: Radiation hazard, Costly, Orientation sensitivity, Access to both sides needed, Film processing time.",
+    "rt limitations": "Limitations: Radiation safety requirements, 2D projection (depth information limited), Crack orientation critical, Not for discontinuities parallel to beam, Higher cost than some methods, Film processing requirements.",
+    "digital radiography": "Digital Radiography (DR) uses detectors instead of film. Types: Computed Radiography (CR - phosphor plates), Direct Radiography (flat panel detectors). Benefits: Immediate results, Digital storage, Image enhancement, Lower consumable costs, Environmentally friendly.",
+    "radiographic film": "Film types: Class 1 (ultra-fine grain), Class 2 (fine grain), Class 3 (medium grain), Class 4 (coarse grain). Selection based on required sensitivity, material thickness, and technique. Requires darkroom processing or automatic processors.",
+
+    // Eddy Current Testing
+    "eddy current testing": "Eddy Current Testing (ET) uses electromagnetic induction to detect surface and near-surface defects in conductive materials. Works by inducing circular electrical currents (eddy currents) and measuring impedance changes caused by defects or material variations.",
+    "et": "Eddy Current Testing (ET) uses electromagnetic induction to detect surface and near-surface defects in conductive materials. Works by inducing circular electrical currents (eddy currents) and measuring impedance changes caused by defects or material variations.",
+    "eddy current": "Applications: Crack detection, Material sorting, Conductivity measurement, Coating thickness, Heat treatment verification, Corrosion detection, Tube and bar inspection. Frequencies: 100 Hz - 6 MHz. Higher frequencies for surface defects, lower for deeper penetration.",
+    "advantages of eddy current": "Advantages: No coupling needed, High speed, Works through coatings, Can be automated, Sensitive to small defects, Multiple parameter measurement. Limitations: Conductive materials only, Limited penetration, Lift-off effect, Requires reference standards, Complex interpretation.",
+
+    // Acoustic Emission
+    "acoustic emission": "Acoustic Emission (AE) detects transient elastic waves generated by crack growth, deformation, or corrosion. Passive method - listens to material sounds. Used for structural integrity monitoring, leak detection, and weld monitoring during fabrication.",
+    "ae": "Acoustic Emission (AE) detects transient elastic waves generated by crack growth, deformation, or corrosion. Passive method - listens to material sounds. Used for structural integrity monitoring, leak detection, and weld monitoring during fabrication.",
+
+    // Thermography
+    "thermographic testing": "Infrared Thermography (IRT) detects temperature differences indicating defects. Active thermography applies heat, passive observes natural temperature. Applications: Composite disbond detection, corrosion under insulation, electrical inspections, building envelope testing.",
+    "irt": "Infrared Thermography (IRT) detects temperature differences indicating defects. Active thermography applies heat, passive observes natural temperature. Applications: Composite disbond detection, corrosion under insulation, electrical inspections, building envelope testing.",
+
+    // Comparison Methods
+    "compare ut and rt": "UT vs RT: UT better for planar defects (cracks), provides depth info, no radiation, instant results, portable. RT better for volumetric defects (porosity), provides permanent image, less surface prep needed, established standards. UT: single side access. RT: both sides needed.",
+    "compare mt and pt": "MT vs PT: MT works only on ferromagnetic materials, detects surface and near-surface defects, faster for large areas, cleaner process. PT works on any non-porous material, only surface-breaking defects, better for complex shapes, more sensitive to fine cracks.",
+    "difference between ndt methods": "Key differences: VT - surface only, visual. PT - surface cracks, all non-porous. MT - surface/near-surface, ferromagnetic only. UT - internal, most materials. RT - internal, most materials, radiation. ET - surface/near-surface, conductive only. Each has specific applications and limitations.",
+
+    // Standards and Certification
+    "ndt standards": "Major standards: ISO (International), ASME (American), ASTM (Materials), API (Petroleum), EN (European), BS (British), AWS (Welding), MIL-STD (Military). Common standards: ISO 9712 (personnel certification), ASME Section V, ASTM E standards, EN ISO 17635 (welds).",
+    "iso standards": "ISO 9712: Qualification and certification of NDT personnel. ISO 17635: NDT of welds. ISO 3452: Penetrant testing. ISO 9934: Magnetic particle testing. ISO 17640: Ultrasonic testing of welds. ISO 5579: Radiographic testing.",
+    "asme standards": "ASME Boiler & Pressure Vessel Code, Section V: Nondestructive Examination. Covers methods, procedures, personnel qualification. Section VIII: Pressure vessels. Section I: Power boilers. Section IX: Welding qualifications.",
+    "astm standards": "ASTM standards: E165 for PT, E709 for MT, E164 for UT, E94 for RT, E426 for ET. ASTM also provides reference standards and calibration procedures for various NDT methods.",
+    "certification": "NDT Personnel Certification Levels: Level 1 (perform tests under supervision), Level 2 (perform and evaluate tests, write procedures), Level 3 (develop procedures, oversee, train). Certification bodies: PCN (UK), ASNT (USA), CANDE (Canada), ISO 9712 compliant schemes.",
+    "asnt": "ASNT (American Society for Nondestructive Testing) provides SNT-TC-1A recommended practice for qualification and certification. ASNT Level III is highest certification. Also publishes NDT Handbook, research journal, and conducts conferences.",
+
+    // Calibration and Reference Standards
+    "reference standards": "Reference Standards are precision blocks with known dimensions and properties used to calibrate NDT equipment. Types: Calibration blocks, Sensitivity blocks, Resolution blocks, Distance-Amplitude Correction (DAC) blocks. Ensure measurement accuracy and repeatability.",
+    "calibration blocks": "Calibration blocks: IIW Type (ISO 2400), V1/V2 blocks, Miniature angle beam blocks, SDH (Side-Drilled Hole) blocks, DSC (Distance-Size-Calibration) blocks. Materials match test specimen (steel, aluminum, composites). Provide known reflectors for instrument setup.",
+    "ndi blocks": "NDI (Nondestructive Inspection) blocks include reference standards, calibration blocks, and flawed specimens. Essential for: Equipment calibration, Procedure validation, Inspector training, Compliance verification, Quality assurance programs.",
+    "calibration": "NDT calibration involves: Setting up equipment using reference standards, Verifying performance parameters (sensitivity, resolution, linearity), Documenting results, Establishing traceability to national/international standards. Required periodically and after equipment changes.",
+
+    // DAKS Specific Information
+    "daks": "DAKS NDT Services is a leading provider of Non-Destructive Testing solutions based in Tamil Nadu, India. We specialize in: Reference Standards, Flawed Specimens, Validation Blocks, Calibration Services, NDT Consulting, and Custom Solutions for various industries worldwide.",
+    "about daks": "DAKS NDT Services: Founded with expertise in precision manufacturing of NDT reference standards. We serve industries globally with quality-assured products that comply with international standards. Our mission: Enhance NDT reliability through superior calibration standards.",
+    "daks services": "DAKS Services: 1. Reference Standards Manufacturing 2. Flawed Specimens Production 3. Validation Blocks 4. Custom NDT Solutions 5. Equipment Calibration 6. NDT Consulting 7. Training Aids 8. Certification Support 9. R&D for New Standards.",
+    "daks products": "DAKS Products: UT Calibration Blocks, PAUT/TOFD Blocks, MT/PT Reference Standards, Radiography IQIs and Blocks, Eddy Current Standards, Composite Reference Standards, Weld Reference Samples, Thickness Calibration Blocks, Custom Designed Blocks.",
+    "contact daks": "Contact DAKS: Address: Babu Garden, No.163, Narasimman Street, 2nd St, Sikkarayapuram, Tamil Nadu 600128, India. Phone: 087784 23621. Email: jeevaoff22@gmail.com. Website: For inquiries about products, customization, or technical support.",
+    "daks quality": "DAKS Quality Assurance: ISO compliant manufacturing, Material traceability, Precision machining (tolerance ±0.01mm), Third-party verification, Comprehensive documentation, Regular calibration, Continuous improvement processes, Customer satisfaction focus.",
+    "daks capabilities": "DAKS Capabilities: CNC machining, Precision grinding, Heat treatment, Material certification, Non-destructive testing of our products, Custom design and engineering, Small to large batch production, International shipping, Technical support.",
+
+    // Flawed Specimens
+    "flawed specimens": "Flawed Specimens are test pieces with intentionally introduced defects for: Training NDT inspectors, Validating inspection procedures, Demonstrating detection capabilities, Equipment performance verification, Personnel qualification testing. Defects include cracks, porosity, inclusions, lack of fusion.",
+    "test specimens": "Types: Welded specimens with defects, Castings with natural/artificial defects, Forging samples, Composite panels with delaminations, Pipe sections with corrosion, Reference cracks of known dimensions. Essential for realistic training and procedure development.",
+    "training specimens": "Training specimens help inspectors: Recognize defect indications, Learn equipment operation, Understand method limitations, Develop interpretation skills, Meet certification requirements. DAKS provides specimens for all major NDT methods with documented defect characteristics.",
+
+    // Validation Blocks
+    "validation blocks": "Validation Blocks confirm NDT systems perform within specifications. Used for: Procedure qualification, Equipment acceptance, Periodic performance verification, Regulatory compliance, Quality audits. Contain known defects at critical locations to demonstrate detection capability.",
+    "procedure qualification": "Procedure Qualification uses validation blocks to prove inspection procedures detect specified defects. Required by codes like ASME, API, ISO. Ensures reliability before field implementation. DAKS provides blocks meeting various code requirements.",
+
+    // Materials and Defects
+    "materials tested": "Common materials: Carbon steel, Stainless steel, Aluminum, Titanium, Composites, Welds, Castings, Forgings, Plastics, Ceramics. Each requires specific NDT methods based on material properties, defect types, and application requirements.",
+    "defects in ndt": "Common defects: Cracks (fatigue, stress corrosion), Porosity (gas, shrinkage), Inclusions (slag, oxide), Lack of fusion/penetration (welds), Delaminations (composites), Corrosion (pitting, erosion), Wear, Geometric discontinuities. Each method detects specific defect types.",
+    "weld defects": "Weld defects: Cracks (hot, cold), Porosity (scattered, clustered), Slag inclusions, Lack of fusion, Incomplete penetration, Undercut, Overlap, Burn-through, Distortion. UT excellent for planar defects, RT for volumetric defects, MT/PT for surface defects.",
+    "casting defects": "Casting defects: Shrinkage porosity, Gas porosity, Sand inclusions, Cold shuts, Misruns, Hot tears, Core shift, Dimensional inaccuracies. RT commonly used, also UT and visual inspection. Defect acceptance criteria vary by application.",
+
+    // Equipment
+    "ndt equipment": "Basic equipment: UT - Flaw detector, transducers, couplant. RT - Radiation source, film/detector, processor. MT - Magnetizing unit, particles, UV light. PT - Penetrant, cleaner, developer, lighting. ET - Instrument, probes. Modern: Digital systems, automated scanners, robotics.",
+    "ultrasonic equipment": "UT Equipment: Flaw detector (analog/digital), Transducers (contact, angle, immersion), Wedges (for angle beam), Cables, Calibration blocks, Couplants (gel, water, oil). Advanced: Phased array systems, TOFD systems, Automated scanners, Data acquisition software.",
+    "radiographic equipment": "RT Equipment: X-ray generator or gamma source, Film cassettes or digital detectors, Processing equipment, Radiation monitors, Collimators, Screens, IQIs (penetrameters). Safety: Radiation warning signs, barriers, personal dosimeters, area monitoring.",
+
+    // Safety
+    "safety in ndt": "Safety considerations: Radiation protection (RT), Electrical safety, Chemical handling (PT), Magnetic fields (MT), Mechanical hazards, Ergonomics, Environmental protection. Training: Radiation safety officer, Hazard communication, Personal protective equipment, Emergency procedures.",
+    "radiation safety": "Radiation Safety: ALARA principle (As Low As Reasonably Achievable), Time-Distance-Shielding, Radiation monitoring (dosimeters), Controlled areas, Warning signs, Interlocks, Emergency procedures, Regulatory compliance (AERB in India, NRC in USA).",
+
+    // Industry Applications
+    "aerospace ndt": "Aerospace NDT: Critical for safety. Methods: UT for composites and bonds, ET for aircraft skins, RT for castings, PT/MT for engine components. Standards: NAS, MIL, Airbus/Boeing specifications. Focus on fatigue crack detection and composite inspection.",
+    "oil and gas ndt": "Oil & Gas: Pipeline inspection (UT, MFL), Storage tanks (RT, UT), Offshore structures (MT, UT), Refinery equipment (all methods). Challenges: Corrosion monitoring, High temperatures, Remote locations. Advanced: In-line inspection tools, Automated UT systems.",
+    "power plant ndt": "Power Plants: Boiler tubes (ET, IRT), Turbine blades (PT, ET), Welds (UT, RT), Piping (UT, RT). Periodicity: During fabrication, pre-service, in-service, post-service. Critical for preventing catastrophic failures in high-pressure systems.",
+    "automotive ndt": "Automotive: Castings (RT), Welds (UT, ET), Assemblies (VT), Materials (ET for sorting). Focus on: Quality control, Lightweight materials (aluminum, composites), High-volume production, Automated inspection systems.",
+
+    // Emerging Technologies
+    "advanced ndt": "Advanced NDT: Phased Array UT, Digital Radiography, Guided Wave UT, Laser UT, Terahertz imaging, Microwave testing, Neutron radiography. Benefits: Faster inspection, Better defect characterization, Digital records, Automation capabilities, Remote operation.",
+    "digital ndt": "Digital NDT: Data acquisition, Cloud storage, AI analysis, Automated reporting, Remote monitoring, Digital twins for predictive maintenance, Integration with Industry 4.0, Blockchain for data integrity, Mobile applications for field work.",
+    "future of ndt": "Future trends: AI/ML for defect recognition, Robotics for hazardous areas, IoT sensors for continuous monitoring, Augmented Reality for training/guidance, Nanotechnology sensors, Multi-method integration, Real-time data analysis, Predictive analytics.",
+
+    // Training and Career
+    "ndt training": "Training includes: Theory of method, Equipment operation, Procedure application, Defect recognition, Reporting, Safety, Standards knowledge. Duration: Basic courses 40-80 hours, advanced longer. Hands-on practice with flawed specimens essential.",
+    "ndt career": "NDT Careers: Technician, Inspector, Engineer, Manager, Consultant, Trainer, Sales engineer, Equipment designer. Industries: Oil & gas, Aerospace, Automotive, Power, Manufacturing, Marine, Railways. Growth areas: Advanced methods, Digitalization, Renewable energy.",
+    "salary in ndt": "Salaries vary by: Country, Experience, Certification level, Industry, Method specialization. Entry-level technicians start moderate, certified Level III can earn significantly more. Specialized methods (PAUT, TOFD) command premium rates. Global opportunities available.",
+
+    // DAKS Specific Details
+    "daks manufacturing": "DAKS Manufacturing: State-of-the-art CNC machines, Precision grinding equipment, Heat treatment facilities, Metrology lab, NDT equipment for verification, Clean room assembly, Documentation system, Quality control at each stage, Traceability maintained.",
+    "daks customers": "DAKS Customers: NDT service companies, Manufacturing industries, Oil & gas companies, Aerospace firms, Power plants, Research institutions, Training centers, Government agencies, Defense organizations, International clients across continents.",
+    "daks export": "DAKS Exports: Products shipped worldwide, Compliance with international standards, Export documentation, Custom clearance support, Technical documentation in multiple languages, After-sales support, Spare parts availability, Training for international clients.",
+    "daks customization": "DAKS Customization: Design based on customer drawings, Material selection per application, Defect types as required, Dimensions to specification, Certification requirements, Packaging preferences, Documentation formats, Lead time optimization.",
+    "daks lead time": "Standard products: 2-4 weeks. Custom products: 4-8 weeks depending on complexity. Expedited delivery available. Prototype development: Consultation required. Batch production: Volume discounts available. Contact for specific lead time inquiries.",
+    "daks pricing": "Pricing depends on: Material type, Complexity of design, Quantity ordered, Certification requirements, Delivery timeline, Customization needs. Competitive pricing with quality assurance. Request quotation with specifications for accurate pricing.",
+    "daks warranty": "Warranty: 12 months against manufacturing defects. Material certification provided. Calibration certificates included. Technical support throughout warranty period. Replacement for defective items. Performance guarantee for intended use.",
+    "daks support": "Technical Support: Installation guidance, Usage instructions, Troubleshooting assistance, Calibration advice, Method selection help, Standard interpretation, Application consulting, Training recommendations, Ongoing customer service.",
+
+    // Inspection Procedures
+    "inspection procedure": "NDT Procedure contains: Scope, References, Equipment details, Calibration requirements, Technique details, Acceptance criteria, Personnel requirements, Reporting format, Safety precautions. Must be qualified using validation blocks before use.",
+    "procedure development": "Procedure Development: Understand application requirements, Select appropriate method, Define technique parameters, Establish acceptance criteria, Create validation plan, Test with reference standards, Document steps, Qualify procedure, Train personnel, Implement with monitoring.",
+    "acceptance criteria": "Acceptance Criteria define defect sizes/types allowed. Based on: Design requirements, Industry standards, Safety factors, Service conditions, Previous experience. Examples: No cracks allowed, Porosity limited by size/number, Thickness reduction limits, Weld undercut depth maximum.",
+
+    // Quality Assurance
+    "quality assurance": "QA in NDT: Procedure qualification, Equipment calibration, Personnel certification, Documentation control, Audit programs, Corrective actions, Continuous improvement, Management review, Customer feedback, Benchmarking against standards.",
+    "traceability": "Traceability: Material certificates, Calibration certificates, Equipment records, Personnel qualifications, Procedure approvals, Inspection results, Report storage, Non-conformance tracking, Corrective actions, Management review records. Essential for audit compliance.",
+
+    // Common Questions
+    "hello": "Hello! I'm Alpha AI, your NDT assistant. How can I help you today? You can ask about NDT methods, DAKS products, standards, or any NDT-related topic!",
+    "hi": "Hi there! Welcome to Alpha AI. I specialize in Non-Destructive Testing information. What would you like to know about? Try asking about UT, RT, calibration blocks, or DAKS services!",
+    "help": "I can help with: NDT methods explanation, Comparison of techniques, Standards information, Defect types, Industry applications, Training requirements, DAKS products & services, Calibration procedures, Safety considerations, and Career information in NDT.",
+    "services": "DAKS Services include: 1. Reference Standards Manufacturing 2. Flawed Specimens Production 3. Validation Blocks 4. Calibration Services 5. NDT Consulting 6. Custom Solutions 7. Training Aids 8. Technical Support 9. Certification Assistance.",
+    "products": "DAKS Products: UT Calibration Blocks (IIW, V1/V2, DAC), PAUT/TOFD Blocks, MT Reference Pieces, PT Sensitivity Panels, RT IQIs and Blocks, Eddy Current Standards, Composite Reference Standards, Weld Reference Samples, Thickness Standards.",
+    "standards": "NDT Standards include: ISO 9712 (personnel), ASME Section V, ASTM E-series, EN ISO standards, API codes, AWS specifications. DAKS blocks comply with all major standards for accurate calibration and validation.",
+    "certificates": "DAKS provides: Material Certificates, Calibration Certificates, Dimensional Reports, Heat Treatment Charts, NDT Reports for our products, Compliance Statements, Traceability Documentation, Export Documents as required.",
+    "order process": "Order Process: 1. Inquiry with specifications 2. Quotation with lead time 3. Order confirmation 4. Production with updates 5. Inspection and certification 6. Packaging and shipping 7. Delivery and installation support 8. After-sales service.",
+    "payment terms": "Payment Terms: 50% advance with order, 50% before shipment. International: LC or TT. Credit terms available for established customers. GST applicable for India. Export pricing in USD. Contact for specific payment arrangements.",
+    "shipping": "Shipping: Domestic via reliable couriers. International via air or sea. Export documentation provided. Insurance available. Tracking provided. Customs clearance assistance. Packaging for safe transport. Special handling for delicate items.",
+    "returns": "Return Policy: Defective items replaced. Wrong specifications - consult for solution. Custom items generally non-returnable. Return authorization required. Condition assessment upon receipt. Contact within 7 days of receiving issues.",
+    "technical query": "For technical queries: Provide application details, Material type, Thickness range, Defect types of interest, Standards to comply with, Existing procedures, Equipment details. DAKS engineers will provide specific recommendations.",
+    "quote request": "For quotation: Send specifications including: Product type, Material, Dimensions, Quantity, Certification requirements, Delivery timeline, Special requirements. Email to jeevaoff22@gmail.com or call 087784 23621.",
+    "visit daks": "Visit DAKS at: Babu Garden, No.163, Narasimman Street, 2nd St, Sikkarayapuram, Tamil Nadu 600128, India. Please call ahead for appointment. Factory tours available for serious clients. Demonstration of products can be arranged.",
+    "partnership": "Partnership Opportunities: Distributors wanted in various regions. OEM collaborations. Training institute tie-ups. Research partnerships. Agent commissions. Referral programs. Technology sharing. Contact for partnership discussions.",
+    "career at daks": "DAKS Careers: Looking for NDT engineers, Design engineers, Quality inspectors, CNC operators, Sales engineers, Administrative staff. Send resume to jeevaoff22@gmail.com. Training provided for suitable candidates.",
+    "daks history": "DAKS History: Founded by NDT experts with decades of experience. Started with calibration blocks, expanded to full range. Grown through quality focus and customer satisfaction. Now serving global clients with made-in-India precision products.",
+    "daks vision": "DAKS Vision: To be global leader in NDT reference standards. Mission: Enhance inspection reliability worldwide. Values: Quality, Innovation, Customer focus, Integrity, Continuous improvement. Commitment: Support NDT community with superior products.",
+    "daks team": "DAKS Team: Experienced NDT professionals, Skilled technicians, Design engineers, Quality experts, Customer service staff, Management with industry experience. Continuous training for skill enhancement. Customer-focused approach in all activities.",
+    "daks innovation": "DAKS Innovation: New block designs for advanced methods, Materials for challenging applications, Digital documentation, Online support tools, R&D for emerging NDT needs, Custom solutions for unique problems, Process improvements for better quality.",
+    "daks sustainability": "DAKS Sustainability: Material optimization, Waste reduction, Energy efficiency, Recyclable packaging, Local sourcing where possible, Employee welfare, Community engagement, Environmental responsibility in operations, Long-term business approach.",
+
+    // Additional Technical
+    "couplant": "Couplant in UT: Required for sound transmission. Types: Gels (general purpose), Water (immersion testing), Oils (high temperature), Grease (rough surfaces). Must wet surface completely, free of air bubbles, non-corrosive, appropriate viscosity.",
+    "frequency selection": "Frequency Selection: Higher frequency = better resolution but less penetration. Lower frequency = more penetration but poorer resolution. Rule: Maximum frequency = velocity/(2 × grain size). Typical: 2.25 MHz for steel, 5 MHz for thin/fine grain, 1 MHz for coarse grain.",
+    "angle beam": "Angle Beam UT: Common angles: 45°, 60°, 70°. Selection based on: Weld geometry, Defect orientation, Material thickness. Wedges create refraction into material. Used for weld inspection, crack detection, where straight beam insufficient.",
+    "immersion testing": "Immersion UT: Component and transducer in water tank. Advantages: No coupling variability, Better scanning, Complex shapes possible, Automated systems. Used for: Aerospace components, Small parts, High-volume inspection, Precision measurements.",
+    "film processing": "Radiographic Film Processing: Steps: Development, Fixing, Washing, Drying. Automatic processors maintain consistency. Manual processing possible but less consistent. Temperature and time critical. Safelight conditions for certain films.",
+    "iqi": "IQI (Image Quality Indicator): Also called penetrameter. Measures radiographic sensitivity. Placed on source side. Hole-type (ASTM) or wire-type (DIN). Essential for each exposure to verify image quality. Required by all codes.",
+    "sensitivity": "Sensitivity in NDT: Ability to detect small defects. Measured differently for each method. UT: Smallest detectable flaw size. RT: IQI visibility. PT/MT: Crack detection capability. ET: Impedance change detection. Affected by many factors including equipment, procedure, material.",
+    "resolution": "Resolution: Ability to distinguish between closely spaced defects. UT: Axial and lateral resolution. RT: Detail visibility. ET: Defect separation. Important for defect characterization and accurate sizing. Calibration blocks test resolution capability.",
+    "probability of detection": "POD (Probability of Detection): Statistical measure of method reliability. Determined through tests with known defects. Affected by: Defect size/orientation, Material, Procedure, Equipment, Operator skill. Essential for critical applications.",
+    "false calls": "False Calls in NDT: Indications from non-relevant sources. Causes: Geometric reflections, Material noise, Surface conditions, Equipment issues, Interpretation errors. Reduced through: Proper procedure, Reference standards, Experience, Multiple techniques.",
+    "repeatability": "Repeatability: Getting same results on repeated tests. Requires: Consistent procedure, Calibrated equipment, Trained operator, Stable conditions. Verified through: Repeated measurements, Different operators, Round-robin tests, Statistical analysis.",
+
+    // Codes and Regulations
+    "regulations": "NDT Regulations: Country specific. India: AERB for radiation, DGCA for aerospace, IBR for boilers. USA: NRC for nuclear, FAA for aerospace, OSHA for safety. Europe: EN standards, National regulations. Always check local requirements.",
+    "audit": "NDT Audit: Checks compliance with procedures, standards, regulations. Includes: Documentation review, Equipment checks, Witness tests, Personnel interviews, Record examination. Preparation: Updated procedures, Calibration records, Training certificates, Previous reports.",
+    "non conformance": "Non-Conformance: When results don't meet requirements. Process: Document finding, Evaluate significance, Determine cause, Implement corrective action, Prevent recurrence, Update procedures if needed. Essential for continuous improvement.",
+
+    // Specific Industries
+    "pipeline inspection": "Pipeline Inspection: Methods: MFL (Magnetic Flux Leakage), UT wall thickness, UT crack detection, RT for girth welds. Challenges: Long distances, Buried/underwater, Product flow, Safety. Advanced: In-line inspection tools (smart pigs), Above-ground markers.",
+    "composite inspection": "Composite Inspection: Methods: UT (through transmission, pulse echo), Thermography, Tap testing, Shearography. Defects: Delaminations, Porosity, Fiber breakage, Impact damage, Bond quality. Challenges: Complex shapes, Anisotropic properties, Large areas.",
+    "concrete testing": "Concrete NDT: Methods: Rebound hammer, Ultrasonic pulse velocity, Cover meter, Ground penetrating radar, Impact echo, Corrosion mapping. Applications: Strength estimation, Crack depth, Rebar location, Void detection, Thickness measurement, Quality assessment.",
+    "rail inspection": "Rail Inspection: Methods: UT for internal defects, Eddy current for surface cracks, Visual for obvious defects. Automated systems: Rail testing cars with multiple sensors. Focus on: Head checks, Squats, Transverse defects, Bolt hole cracks, Weld quality.",
+    "wind turbine": "Wind Turbine Inspection: Methods: UT for blades and towers, Thermography for blades, Drone-based visual, Eddy current for generators. Challenges: Height access, Weather conditions, Large components, Remote locations. Focus on: Leading edge erosion, Bond lines, Lightning damage.",
+    "bridge inspection": "Bridge Inspection: Methods: Visual (ropes/boats/drones), UT for steel members, Ground penetrating radar for concrete, Corrosion mapping, Load testing. Challenges: Traffic management, Access difficulties, Weather, Safety. Periodic inspection required by law.",
+
+    // Maintenance
+    "predictive maintenance": "Predictive Maintenance using NDT: Monitor equipment condition, Schedule repairs before failure, Reduce downtime, Optimize maintenance costs. Methods: Vibration analysis, Thermography, Oil analysis, UT thickness monitoring, Eddy current for heat exchanger tubes.",
+    "condition monitoring": "Condition Monitoring: Continuous or periodic NDT. Examples: AE for structural monitoring, UT thickness for corrosion, Vibration for rotating equipment, Thermography for electrical. Benefits: Early warning, Trend analysis, Data for decision making, Extended equipment life.",
+
+    // Common Issues
+    "common problems": "Common NDT Problems: Equipment calibration drift, Operator fatigue, Environmental effects, Access limitations, Surface conditions, Material variations, Interpretation differences, Documentation errors. Solutions: Regular audits, Training, Procedure updates, Quality control checks.",
+    "troubleshooting": "Troubleshooting NDT: Check calibration first, Verify equipment settings, Review procedure steps, Consider material factors, Evaluate environmental conditions, Consult reference standards, Get second opinion, Document findings for analysis.",
+
+    // Documentation
+    "reports": "NDT Reports contain: Client information, Component details, Procedure reference, Equipment details, Calibration data, Technique parameters, Results with sketches/photos, Evaluation against criteria, Conclusion, Personnel details, Dates, Signatures. Legal documents requiring accuracy.",
+    "record keeping": "Record Keeping: Maintain for specified period (often 5-10 years). Include: Procedures, Personnel certificates, Equipment calibrations, Inspection reports, Non-conformance reports, Audit reports, Customer complaints, Corrective actions. Digital storage recommended for searchability.",
+
+    // Closing
+    "thank you": "You're welcome! Is there anything else I can help you with regarding NDT, DAKS products, or anything else?",
+    "thanks": "You're welcome! Feel free to ask more questions about NDT methods, applications, or DAKS services anytime.",
+    "bye": "Goodbye! Thank you for chatting with Alpha AI. Feel free to return anytime you have questions about Non-Destructive Testing. Stay safe!",
+    "goodbye": "Goodbye! Remember, DAKS is here to support your NDT needs. Contact us at 087784 23621 or jeevaoff22@gmail.com for specific inquiries. Have a great day!"
+  };
+
+  const getBotResponse = (userText) => {
+    const lowerCaseText = userText.toLowerCase().trim();
+
+    // Check for exact or partial matches
+    for (const keyword in knowledgeBase) {
+      if (lowerCaseText.includes(keyword)) {
+        return knowledgeBase[keyword];
+      }
+    }
+
+    // Check for acronyms
+    const acronyms = {
+      'vt': 'visual testing',
+      'pt': 'liquid penetrant testing',
+      'mt': 'magnetic particle testing',
+      'ut': 'ultrasonic testing',
+      'rt': 'radiographic testing',
+      'et': 'eddy current testing',
+      'ae': 'acoustic emission',
+      'irt': 'infrared thermography',
+      'paut': 'phased array ultrasonic testing',
+      'tofd': 'time of flight diffraction',
+      'iqi': 'image quality indicator',
+      'pod': 'probability of detection',
+      'qa': 'quality assurance',
+      'qc': 'quality control'
+    };
+
+    for (const acronym in acronyms) {
+      if (lowerCaseText === acronym || lowerCaseText.includes(` ${acronym} `) ||
+        lowerCaseText.startsWith(`${acronym} `) || lowerCaseText.endsWith(` ${acronym}`)) {
+        return knowledgeBase[acronyms[acronym]] || knowledgeBase[acronym];
+      }
+    }
+
+    // Default response with suggestions
+    const suggestions = [
+      "Try asking about specific NDT methods like UT, RT, PT, MT",
+      "Ask about DAKS products: reference standards, flawed specimens",
+      "Inquire about NDT applications in your industry",
+      "Need calibration or certification information?",
+      "Ask about NDT standards: ISO, ASME, ASTM",
+      "Career questions in NDT? I can help!",
+      "Technical questions about equipment or procedures?"
+    ];
+
+    const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
+
+    return `I'm not sure about "${userText}". ${randomSuggestion}\n\nFor specific inquiries, contact DAKS directly:\n📞 087784 23621\n📧 jeevaoff22@gmail.com\n📍 Babu Garden, Tamil Nadu`;
+  };
+
+  const handleSendMessage = () => {
+    if (!inputValue.trim()) return;
+
+    // Add user message
+    setMessages(prev => [...prev, { text: inputValue, sender: 'user' }]);
+    const userText = inputValue;
+    setInputValue('');
+
+    // Show typing indicator
+    setIsTyping(true);
+
+    // Get bot response after delay
+    setTimeout(() => {
+      setIsTyping(false);
+      const botResponse = getBotResponse(userText);
+      setMessages(prev => [...prev, { text: botResponse, sender: 'bot' }]);
+    }, 800);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSendMessage();
+    }
+  };
+
+  const toggleChatbot = () => {
+    setIsOpen(!isOpen);
+    if (!isOpen) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  };
+
+  const handleCloseChatbot = () => {
+    setIsOpen(false);
+  };
+
+  // Quick response suggestions
+  const quickQuestions = [
+    "What is UT?",
+    "DAKS products?",
+    "Compare UT and RT",
+    "Contact DAKS",
+    "NDT standards"
+  ];
+
+  const handleQuickQuestion = (question) => {
+    setInputValue(question);
+    setTimeout(() => {
+      handleSendMessage();
+    }, 100);
+  };
+
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
+
+  // Focus input when chatbot opens
+  useEffect(() => {
+    if (isOpen) {
+      inputRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  return (
+    <div className="chatbot-container">
+      {isOpen && (
+        <div className="chatbot-window">
+          <div className="chatbot-header">
+            <div className="chatbot-header-content">
+              <h3>Alpha AI</h3>
+              <p>Your NDT Assistant</p>
+              <span className="chatbot-status">Online</span>
+            </div>
+            <button className="chatbot-close-btn" onClick={handleCloseChatbot} title="Close">
+              ×
+            </button>
+          </div>
+
+          <div className="chatbot-quick-questions">
+            <p>Quick questions:</p>
+            <div className="quick-buttons">
+              {quickQuestions.map((question, index) => (
+                <button
+                  key={index}
+                  className="quick-question-btn"
+                  onClick={() => handleQuickQuestion(question)}
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="chatbot-messages">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`chatbot-message ${message.sender === 'user' ? 'chatbot-user-message' : 'chatbot-bot-message'
+                  }`}
+              >
+                <div className="message-content">
+                  {message.text.split('\n').map((line, i) => (
+                    <p key={i}>{line}</p>
+                  ))}
+                </div>
+                <div className="message-time">
+                  {message.sender === 'user' ? 'You' : 'Alpha AI'} • {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+            ))}
+
+            {isTyping && (
+              <div className="chatbot-message chatbot-bot-message chatbot-typing">
+                <div className="typing-indicator">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="chatbot-input-area">
+            <input
+              ref={inputRef}
+              type="text"
+              className="chatbot-input"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask about NDT methods, DAKS products, standards..."
+              autoComplete="off"
+            />
+            <button
+              className="chatbot-send-btn"
+              onClick={handleSendMessage}
+              disabled={!inputValue.trim()}
+              title="Send message"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="chatbot-footer">
+            <p>Powered by DAKS NDT Services • Ask about UT, RT, PT, MT, calibration, standards</p>
+          </div>
+        </div>
+      )}
+
+      <button
+        className={`chatbot-toggle-btn ${isOpen ? 'active' : ''}`}
+        onClick={toggleChatbot}
+        aria-label={isOpen ? "Close chatbot" : "Open chatbot"}
+        title="Chat with Alpha AI"
+      >
+        {isOpen ? (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ) : (
+          <>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1 15.3C19.3944 16.7118 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0035 9.87812 19.6951 8.7 19.1L3 21L4.9 15.3C4.30493 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92179 4.44061 8.37488 5.27072 7.03258C6.10083 5.69028 7.28825 4.6056 8.7 3.90003C9.87812 3.30496 11.1801 2.99659 12.5 3.00003H13C15.0843 3.11502 17.053 3.99479 18.5291 5.47089C20.0052 6.94699 20.885 8.91568 21 11V11.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="notification-badge">1</span>
+          </>
+        )}
+      </button>
+    </div>
+  );
+};
+
+export default Chatbot;

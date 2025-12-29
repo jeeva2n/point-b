@@ -16,7 +16,7 @@ const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'daks_ndt',
+  database: process.env.DB_NAME || 'daks',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -24,7 +24,7 @@ const pool = mysql.createPool({
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: '*', // Allow all for testing
   credentials: true
 }));
 app.use(express.json());
@@ -55,6 +55,9 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
+// JWT Secret Key (Use environment variable in production)
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secure-jwt-key-2024-daks-ndt';
+
 // Middleware to verify token
 const verifyToken = (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1];
@@ -62,36 +65,76 @@ const verifyToken = (req, res, next) => {
   if (!token) {
     return res.status(403).json({ 
       success: false,
-      message: 'No token provided' 
+      message: 'Access denied. No token provided.' 
     });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const decoded = jwt.verify(token, JWT_SECRET);
     req.adminId = decoded.id;
     next();
   } catch (err) {
     return res.status(401).json({ 
       success: false,
-      message: 'Invalid token' 
+      message: 'Invalid or expired token' 
     });
   }
 };
 
-// Admin login
-app.post('/api/admin/login', async (req, res) => {
+// Rate limiting middleware (Basic implementation)
+const rateLimitMap = new Map();
+const rateLimit = (req, res, next) => {
+  const ip = req.ip;
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000; // 15 minutes
+  const maxRequests = 5; // Max 5 attempts per 15 minutes
+
+  if (!rateLimitMap.has(ip)) {
+    rateLimitMap.set(ip, { attempts: 1, firstAttempt: now });
+    return next();
+  }
+
+  const data = rateLimitMap.get(ip);
+  
+  if (now - data.firstAttempt > windowMs) {
+    // Reset if window has passed
+    rateLimitMap.set(ip, { attempts: 1, firstAttempt: now });
+    return next();
+  }
+
+  if (data.attempts >= maxRequests) {
+    return res.status(429).json({
+      success: false,
+      message: 'Too many login attempts. Please try again later.'
+    });
+  }
+
+  data.attempts++;
+  next();
+};
+
+// Secure Admin Login
+app.post('/api/admin/login', rateLimit, async (req, res) => {
   try {
-    const { password } = req.body;
+    const { username, password } = req.body;
     
+    // Input validation
+    if (!username || !password) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Username and password are required' 
+      });
+    }
+
     const [rows] = await pool.execute(
       'SELECT * FROM admins WHERE username = ?',
-      ['admin']
+      [username]
     );
 
     if (rows.length === 0) {
       return res.status(401).json({ 
         success: false,
-        message: 'Admin not found' 
+        message: 'Invalid credentials' 
       });
     }
 
@@ -101,14 +144,18 @@ app.post('/api/admin/login', async (req, res) => {
     if (!validPassword) {
       return res.status(401).json({ 
         success: false,
-        message: 'Invalid password' 
+        message: 'Invalid credentials' 
       });
     }
 
     const token = jwt.sign(
-      { id: admin.id, username: admin.username }, 
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
+      { 
+        id: admin.id, 
+        username: admin.username,
+        type: 'admin'
+      }, 
+      JWT_SECRET,
+      { expiresIn: '8h' } // Shorter expiry for security
     );
 
     res.json({ 
@@ -129,10 +176,82 @@ app.post('/api/admin/login', async (req, res) => {
   }
 });
 
-// Get all products
+// Change admin password
+app.post('/api/admin/change-password', verifyToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required'
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 8 characters long'
+      });
+    }
+
+    const [rows] = await pool.execute(
+      'SELECT * FROM admins WHERE id = ?',
+      [req.adminId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Admin not found'
+      });
+    }
+
+    const admin = rows[0];
+    const validCurrentPassword = await bcrypt.compare(currentPassword, admin.password);
+
+    if (!validCurrentPassword) {
+      return res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    
+    await pool.execute(
+      'UPDATE admins SET password = ? WHERE id = ?',
+      [hashedNewPassword, req.adminId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    console.error('Password change error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error changing password'
+    });
+  }
+});
+
+// Get all products (with type filter)
 app.get('/api/products', async (req, res) => {
   try {
-    const [rows] = await pool.execute('SELECT * FROM products ORDER BY created_at DESC');
+    const { type } = req.query;
+    let query = 'SELECT * FROM products';
+    let params = [];
+
+    if (type) {
+      query += ' WHERE product_type = ?';
+      params.push(type);
+    }
+
+    query += ' ORDER BY created_at DESC';
+    
+    const [rows] = await pool.execute(query, params);
     res.json({
       success: true,
       products: rows
@@ -146,24 +265,31 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-// Create new product
-app.post('/api/products', upload.single('image'), async (req, res) => {
+// Create new product (protected)
+app.post('/api/products', verifyToken, upload.single('image'), async (req, res) => {
   try {
-    const { name, description, category, subcategory } = req.body;
+    const { name, description, category, subcategory, product_type } = req.body;
     
+    if (!name || !description || !category || !subcategory || !product_type) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'All fields are required' 
+      });
+    }
+
     if (!req.file) {
       return res.status(400).json({ 
         success: false,
-        message: 'Image is required' 
+        message: 'Product image is required' 
       });
     }
 
     const imageUrl = '/uploads/' + req.file.filename;
 
     const [result] = await pool.execute(
-      `INSERT INTO products (name, description, category, subcategory, image_url) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [name, description, category, subcategory, imageUrl]
+      `INSERT INTO products (name, description, category, subcategory, image_url, product_type) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [name, description, category, subcategory, imageUrl, product_type]
     );
 
     res.status(201).json({
@@ -180,8 +306,8 @@ app.post('/api/products', upload.single('image'), async (req, res) => {
   }
 });
 
-// Delete product
-app.delete('/api/products/:id', async (req, res) => {
+// Delete product (protected)
+app.delete('/api/products/:id', verifyToken, async (req, res) => {
   try {
     const [rows] = await pool.execute(
       'SELECT * FROM products WHERE id = ?',
@@ -216,16 +342,57 @@ app.delete('/api/products/:id', async (req, res) => {
   }
 });
 
+// Verify token endpoint
+app.get('/api/admin/verify', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT id, username, email FROM admins WHERE id = ?',
+      [req.adminId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Admin not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      admin: rows[0]
+    });
+  } catch (error) {
+    console.error('Token verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Token verification failed'
+    });
+  }
+});
+
+// Logout endpoint (client-side token removal)
+app.post('/api/admin/logout', verifyToken, (req, res) => {
+  res.json({
+    success: true,
+    message: 'Logged out successfully'
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK',
     message: 'DAKS NDT Backend is running',
-    database: 'MySQL'
+    database: 'MySQL',
+    security: 'Enabled'
   });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Initialize admin and start server
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, async () => {
+  await initializeAdmin();
+  console.log(`✅ Secure Server running on port ${PORT}`);
+  console.log(`🔒 Admin authentication: ENABLED`);
+  console.log(`📁 Upload directory: ${uploadsDir}`);
 });

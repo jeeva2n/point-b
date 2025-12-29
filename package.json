@@ -2,6 +2,7 @@
   "name": "daks-ndt-frontend",
   "version": "1.0.0",
   "private": true,
+  "proxy": "http://localhost:5001",
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
@@ -9,6 +10,7 @@
     "axios": "^1.6.2",
     "framer-motion": "^12.23.24",
     "gsap": "^3.13.0",
+    "lucide-react": "^0.556.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^4.12.0",
@@ -22,12 +24,6 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -39,6 +35,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "proxy": "http://localhost:5000"
+  }
 }
