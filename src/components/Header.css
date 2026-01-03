@@ -3,6 +3,7 @@
 /* ============================
       HEADER CONTAINER
 ============================ */
+
 .header {
   background: #edeff3;
   backdrop-filter: blur(15px);
@@ -1471,4 +1472,81 @@
     min-width: 44px;
     min-height: 44px;
   }
+}
+/* Cart icon and badge styles */
+.cart-count-badge {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  background-color: #ff4b55;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 1px solid white;
+}
+
+/* Mobile sidebar cart styling */
+.mobile-sidebar .mobile-nav-section:first-child {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.mobile-sidebar .mobile-nav-section:first-child .mobile-nav-title {
+  color: #ff4b55;
+  border-bottom-color: rgba(255, 75, 85, 0.3);
+}
+/* ============================
+   LEFT-TO-RIGHT UNDERLINE ANIMATION ONLY
+============================ */
+.main-nav a::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #0066ff, #004aad);
+  border-radius: 1px;
+  transition: width 0.3s ease-in-out;
+  z-index: 1;
+}
+
+.main-nav a:hover::before {
+  width: 100%;
+}
+
+/* Active state - underline stays visible */
+.main-nav li.active a::before {
+  width: 100%;
+  background: linear-gradient(90deg, #004aad, #004aad);
+}
+
+/* For mega menu items */
+.has-mega-menu > a::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #004aad, #004aad);
+  border-radius: 1px;
+  transition: width 0.3s ease-in-out;
+  z-index: 1;
+}
+
+.has-mega-menu:hover > a::before {
+  width: 100%;
+}
+
+.has-mega-menu.active > a::before {
+  width: 100%;
+  background: linear-gradient(90deg, #004aad, #004aad);
 }

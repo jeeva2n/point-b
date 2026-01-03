@@ -9,7 +9,7 @@ function SimpleProductModal({ product, onClose }) {
         <span className="simple-modal-close" onClick={onClose}>&times;</span>
         
         <img 
-          src={`http://localhost:5001${product.image_url}`} 
+          src={`http://192.168.1.9:5002${product.image_url}`} 
           alt={product.name}
           className="simple-modal-image"
         />

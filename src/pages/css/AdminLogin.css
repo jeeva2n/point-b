@@ -41,7 +41,7 @@ body {
 /* Page Container */
 .admin-login-page {
   min-height: 60vh;
-  background: white;
+  background: #ffffff;
   display: flex;
   flex-direction: column;
 }

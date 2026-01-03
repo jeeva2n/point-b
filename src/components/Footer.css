@@ -38,12 +38,15 @@
 
 .footer-nav a {
   text-decoration: none;
-  color: #1b1b1b;
-  font-size: 14px;
+  color: #111;
   font-weight: bold;
+  font-size: 13px;
+  text-transform: uppercase;
   position: relative;
-  padding: 5px 0;
-  transition: color 0.3s ease;
+  padding: 10px 0;
+  transition: color 0.3s ease, font-size 0.3s ease;
+  white-space: nowrap;
+  display: block;
 }
 
 /* Blue line animation for footer links */

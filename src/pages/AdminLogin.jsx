@@ -4,7 +4,8 @@ import "./css/AdminLogin.css";
 
 function AdminLogin() {
   const navigate = useNavigate();
-  const [backendUrl, setBackendUrl] = useState("http://localhost:5000");
+// In AdminLogin.js, change this line:
+const [backendUrl, setBackendUrl] = useState("http://192.168.1.9:5001");
   const [serverStatus, setServerStatus] = useState("checking");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");

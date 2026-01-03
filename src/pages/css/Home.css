@@ -50,10 +50,10 @@
 /* ------------------------------------------------------ */
 /* CARD VARIABLES (Colors for Fonts) */
 /* ------------------------------------------------------ */
-.card:nth-child(1) { --pc-1: #4ade80; --pc-2: #a3e635; --pc-3: #15803d; }
-.card:nth-child(2) { --pc-1: #f87171; --pc-2: #f472b6; --pc-3: #5934b9; }
-.card:nth-child(3) { --pc-1: #c8bde9; --pc-2: #a872dd; --pc-3: #2e133a; }
-.card:nth-child(4) { --pc-1: #38bdf8; --pc-2: #60a5fa; --pc-3: #0369a1; }
+.card:nth-child(4) { --pc-1: #00f6ff; --pc-2: #37b6ff; --pc-3: #0d57a6; }
+.card:nth-child(3) { --pc-1: #fb7cff; --pc-2: #952bec; --pc-3: #3b0fff; }
+.card:nth-child(2) { --pc-1: #ff8a47; --pc-2: #fa1762; --pc-3: #351469; }
+.card:nth-child(1) { --pc-1: #1fb600; --pc-2: #c0f015; --pc-3: #ffea00; }
 
 /* ------------------------------------------------------ */
 /* CARD LAYOUT */
@@ -316,7 +316,7 @@
 }
 
 .card:nth-child(1) .feature-tag { border-color: #4ade80; }
-.card:nth-child(1) .feature-tag:hover { background: rgba(74, 222, 128, 0.2); border-color: #4ade80; }
+.card:nth-child(1) .feature-tag:hover { background: rgba(18, 20, 19, 0.2); border-color: #4ade80; }
 
 .card:nth-child(2) .feature-tag { border-color: #f87171; }
 .card:nth-child(2) .feature-tag:hover { background: rgba(248, 113, 113, 0.2); border-color: #f87171; }
@@ -519,7 +519,7 @@
   }
   
   .card-title {
-    font-size: clamp(1.2rem, 2vw, 2.2rem);
+    font-size: clamp(2.2rem, 2vw, 2.2rem);
     margin-bottom: 3px;
   }
   
@@ -777,7 +777,7 @@
   /* Card-specific border colors */
   .card:nth-child(1) {
     border-color: rgba(74, 222, 128, 0.5);
-    box-shadow: 0 8px 32px rgba(74, 222, 128, 0.12), 0 0 0 1px rgba(74, 222, 128, 0.15) inset;
+    box-shadow: 0 8px 32px rgba(5, 230, 87, 0.12), 0 0 0 1px rgba(74, 222, 128, 0.15) inset;
   }
   
   .card:nth-child(2) {

@@ -10,6 +10,9 @@ function ValidationBlocks({ category: initialCategory }) {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
+  // Configuration
+  const BACKEND_URL = "http://192.168.1.9:5001";
+
   // Categories list
   const categories = [
     "All",
@@ -26,7 +29,6 @@ function ValidationBlocks({ category: initialCategory }) {
     "Boiler Tube PAUT Validation Blocks": "/validation-blocks/boiler-tube"
   };
 
-  // Update selected category when prop changes
   useEffect(() => {
     if (initialCategory) {
       setSelectedCategory(initialCategory);
@@ -54,11 +56,39 @@ function ValidationBlocks({ category: initialCategory }) {
     return () => window.removeEventListener("scroll", reveal);
   }, [products]);
 
+  // --- IMAGE HELPER FUNCTION (Fixes runtime errors) ---
+  const getImageSrc = (product) => {
+    if (!product) return "/images/placeholder.jpg";
+
+    let imagePath = 
+      product.image_url || 
+      product.mainImage || 
+      (product.images && product.images.length > 0 ? product.images[0] : null);
+
+    if (!imagePath) return "/images/placeholder.jpg";
+
+    // Handle object structure safely
+    if (typeof imagePath === 'object') {
+      if (imagePath.url) imagePath = imagePath.url;
+      else if (imagePath.path) imagePath = imagePath.path;
+      else return "/images/placeholder.jpg";
+    }
+
+    const pathString = String(imagePath);
+
+    if (pathString.startsWith("http") || pathString.startsWith("blob:")) {
+      return pathString;
+    }
+
+    const cleanPath = pathString.startsWith("/") ? pathString : `/${pathString}`;
+    return `${BACKEND_URL}${cleanPath}`;
+  };
+
   // Fetch validation blocks
   const fetchProducts = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/products?type=validation_block"
+        `${BACKEND_URL}/api/products?type=validation_block`
       );
       console.log("Fetching validation blocks from:", response.url);
 
@@ -75,7 +105,6 @@ function ValidationBlocks({ category: initialCategory }) {
     }
   };
 
-  // Handle category change with navigation
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
     const url = categoryUrlMap[category];
@@ -84,12 +113,10 @@ function ValidationBlocks({ category: initialCategory }) {
     }
   };
 
-  // Navigate to product detail page
   const handleViewDetails = (product) => {
     navigate(`/product/${product.id}`);
   };
 
-  // Filter products
   const filteredProducts = products.filter((product) => {
     const matchesCategory =
       selectedCategory === "All" || product.category === selectedCategory;
@@ -107,7 +134,6 @@ function ValidationBlocks({ category: initialCategory }) {
     navigate("/validation-blocks");
   };
 
-  // Page title
   const getPageTitle = () => {
     if (selectedCategory && selectedCategory !== "All") {
       return selectedCategory;
@@ -115,7 +141,6 @@ function ValidationBlocks({ category: initialCategory }) {
     return "Validation Blocks";
   };
 
-  // Page description
   const getPageDescription = () => {
     const descriptions = {
       "All":
@@ -128,6 +153,68 @@ function ValidationBlocks({ category: initialCategory }) {
         "Specialized PAUT validation blocks for boiler and heat exchanger tube inspection"
     };
     return descriptions[selectedCategory] || descriptions["All"];
+  };
+
+  // Helper for material string
+  const getMaterialString = (material) => {
+    if (!material) return null;
+    if (Array.isArray(material)) return material[0];
+    if (typeof material === 'object') return JSON.stringify(material);
+    return String(material);
+  };
+
+  // --- SVG ICONS ---
+  const Icons = {
+    Search: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    ),
+    Close: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    ),
+    Box: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+      </svg>
+    ),
+    Ruler: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 12h20"></path>
+        <path d="M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"></path>
+        <path d="M2 12V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v6"></path>
+        <path d="M12 2v20"></path>
+      </svg>
+    ),
+    Clipboard: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+      </svg>
+    ),
+    ArrowRight: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+    ),
+    Empty: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    ),
+    ArrowRightSm: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+         <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    )
   };
 
   return (
@@ -166,7 +253,7 @@ function ValidationBlocks({ category: initialCategory }) {
             >
               Validation Blocks
             </span>
-            <span className="breadcrumb-separator">›</span>
+            <span className="breadcrumb-separator"><Icons.ArrowRightSm /></span>
             <span className="breadcrumb-current">{selectedCategory}</span>
           </div>
         )}
@@ -186,10 +273,14 @@ function ValidationBlocks({ category: initialCategory }) {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
             />
-            {searchTerm && (
+            {searchTerm ? (
               <button className="search-clear" onClick={() => setSearchTerm("")}>
-                ✕
+                <Icons.Close />
               </button>
+            ) : (
+              <div className="search-icon-wrapper">
+                <Icons.Search />
+              </div>
             )}
           </div>
 
@@ -214,14 +305,14 @@ function ValidationBlocks({ category: initialCategory }) {
               {selectedCategory !== "All" && (
                 <span className="filter-tag">
                   {selectedCategory}
-                  <button onClick={() => handleCategoryChange("All")}>×</button>
+                  <button onClick={() => handleCategoryChange("All")}><Icons.Close /></button>
                 </span>
               )}
 
               {searchTerm && (
                 <span className="filter-tag">
                   "{searchTerm}"
-                  <button onClick={() => setSearchTerm("")}>×</button>
+                  <button onClick={() => setSearchTerm("")}><Icons.Close /></button>
                 </span>
               )}
 
@@ -260,7 +351,7 @@ function ValidationBlocks({ category: initialCategory }) {
                       onClick={() => handleViewDetails(product)}
                     >
                       <img
-                        src={`http://localhost:5000${product.image_url}`}
+                        src={getImageSrc(product)}
                         alt={product.name}
                         loading="lazy"
                         onError={(e) => {
@@ -282,13 +373,22 @@ function ValidationBlocks({ category: initialCategory }) {
 
                       <div className="product-meta">
                         {product.material && (
-                          <span className="meta-item">📦 {product.material}</span>
+                          <span className="meta-item">
+                            <span className="meta-icon"><Icons.Box /></span>
+                            {getMaterialString(product.material)}
+                          </span>
                         )}
                         {product.dimensions && (
-                          <span className="meta-item">📐 {product.dimensions}</span>
+                          <span className="meta-item">
+                            <span className="meta-icon"><Icons.Ruler /></span>
+                            {product.dimensions}
+                          </span>
                         )}
                         {product.standards && (
-                          <span className="meta-item">📋 {product.standards}</span>
+                          <span className="meta-item">
+                            <span className="meta-icon"><Icons.Clipboard /></span>
+                            {product.standards}
+                          </span>
                         )}
                       </div>
 
@@ -297,7 +397,7 @@ function ValidationBlocks({ category: initialCategory }) {
                         onClick={() => handleViewDetails(product)}
                       >
                         <span>View Details</span>
-                        <span className="btn-arrow">→</span>
+                        <span className="btn-arrow"><Icons.ArrowRight /></span>
                       </button>
                     </div>
                   </div>
@@ -305,7 +405,7 @@ function ValidationBlocks({ category: initialCategory }) {
               </div>
             ) : (
               <div className="no-products">
-                <div className="no-products-icon">⚙️</div>
+                <div className="no-products-icon"><Icons.Empty /></div>
                 <h3>
                   No{" "}
                   {selectedCategory !== "All"

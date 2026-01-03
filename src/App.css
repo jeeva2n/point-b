@@ -45,10 +45,20 @@
 /* FOOTER ADJUSTMENTS FOR PADDING                         */
 /* ------------------------------------------------------ */
 .footer {
-  width: 100%;
+  background-color: #edeff3;
+  border-radius: 10px;
+  padding: 12px 25px;
   max-width: 1400px;
-  margin-left: auto;
-  margin-right: auto;
+  width: 100%;
+  font-family: "Poppins", sans-serif;
+  flex-shrink: 0;
+  
+  /* MODIFIED: Added 10px top margin to create gap */
+  margin: 10px auto 20px auto;
+  
+  position: relative;
+  z-index: 100;
+  display: flex;
 }
 
 /* ------------------------------------------------------ */

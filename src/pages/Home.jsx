@@ -245,7 +245,7 @@ const Home = () => {
       id: 3,
       title: "Specific",
       subtitle: "Applications",
-      subtitle2: "customisation",
+      subtitle2: "customs",
       description: "For specialised NDT applications, we design and manufacture customised blocks that align with your inspection parameters.",
       features: ["Precision Cut", "Advanced Testing", "Documentation"]
     },

@@ -5,6 +5,11 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import ContactUs from './components/ContactUs';
 import './App.css';
+import Cart from './pages/Cart';
+import Login from './pages/Login';
+import Account from './pages/Account';
+import AdminOrders from './components/AdminOrders';
+import OrderDetail from './components/OrderDetail';
 
 // Lazy-loaded pages
 const Home = lazy(() => import('./pages/Home'));
@@ -68,7 +73,9 @@ function App() {
 
             {/* Product Detail Route - This handles all product types */}
             <Route path="/product/:productId" element={<ProductDetail />} />
+              <Route path="/order/:orderId" element={<OrderDetail />} />
             <Route path="/contact" element={<ContactUs />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
 
             {/* ==========================================
                 REFERENCE STANDARDS ROUTES
@@ -144,12 +151,13 @@ function App() {
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/downloads-docs" element={<DownloadsDocs />} />
             <Route path="/reach-out" element={<ReachOut />} />
-
+            <Route path="/cart" element={<Cart />} />
             {/* ==========================================
                 ADMIN ROUTES
             ========================================== */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+ <Route path="/login" element={<Login />} />
             <Route
               path="/admin/dashboard"
               element={
@@ -158,7 +166,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
+  <Route path="/account" element={<Account />} />
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

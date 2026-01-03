@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FaInfoCircle, FaUserTie, FaHome } from "react-icons/fa";
+import { FaInfoCircle, FaUserTie, FaHome, FaShoppingCart } from "react-icons/fa";
 import "./Header.css";
 import daksLogo from '../assets/primary/daks.png';
 import h4 from '../assets/primary/h4.png';
@@ -15,23 +15,63 @@ const [megaMenuOpen, setMegaMenuOpen] = useState(null);
 const [clickedMenu, setClickedMenu] = useState(null);
 const [openFlawedGroup, setOpenFlawedGroup] = useState(null);
 const [isAdmin, setIsAdmin] = useState(false);
+const [cartCount, setCartCount] = useState(0);
 
 const navigate = useNavigate();
 const location = useLocation();
 const contactPanelRef = useRef(null);
+const backendUrl = localStorage.getItem("backend_url") || "http://192.168.1.13:5001";
 
 useEffect(() => {
-const token = localStorage.getItem("admin_token");
-setIsAdmin(!!token);
-
-const handleStorageChange = () => {
   const token = localStorage.getItem("admin_token");
   setIsAdmin(!!token);
-};
 
-window.addEventListener('storage', handleStorageChange);
-return () => window.removeEventListener('storage', handleStorageChange);
+  const handleStorageChange = () => {
+    const token = localStorage.getItem("admin_token");
+    setIsAdmin(!!token);
+  };
+
+  window.addEventListener('storage', handleStorageChange);
+  return () => window.removeEventListener('storage', handleStorageChange);
 }, []);
+
+// Check cart count on load and when localStorage changes
+useEffect(() => {
+  checkCartCount();
+  
+  const handleStorageChange = (e) => {
+    if (e.key === 'cartId') {
+      checkCartCount();
+    }
+  };
+  
+  window.addEventListener('storage', handleStorageChange);
+  return () => window.removeEventListener('storage', handleStorageChange);
+}, []);
+
+// Get cart count from API
+const checkCartCount = async () => {
+  const cartId = localStorage.getItem('cartId');
+  if (!cartId) {
+    setCartCount(0);
+    return;
+  }
+  
+  try {
+    const response = await fetch(`${backendUrl}/api/cart/${cartId}`);
+    const data = await response.json();
+    
+    if (data.success && data.cart?.items) {
+      const count = data.cart.items.reduce((sum, item) => sum + item.quantity, 0);
+      setCartCount(count);
+    } else {
+      setCartCount(0);
+    }
+  } catch (error) {
+    console.error('Error getting cart count:', error);
+    setCartCount(0);
+  }
+};
 
 // Close contact panel when clicking outside
 useEffect(() => {
@@ -61,6 +101,10 @@ navigate("/admin/dashboard");
 } else {
 navigate("/admin/login");
 }
+};
+
+const handleCartClick = () => {
+  navigate("/cart");
 };
 
 const handleContactClick = (e) => {
@@ -263,6 +307,16 @@ return (
         <FaHome className="header-icon" />
       </div>
 
+      {/* Cart button - Direct navigation */}
+      <div 
+        className="header-action-item"
+        onClick={handleCartClick}
+        title="View Cart"
+      >
+        <FaShoppingCart className="header-icon" />
+        {cartCount > 0 && <span className="cart-count-badge">{cartCount}</span>}
+      </div>
+
       {/* Admin button - Direct navigation */}
       <div 
         className="header-action-item"
@@ -411,6 +465,14 @@ return (
 
     {/* Scrollable Content */}
     <div className="mobile-sidebar-content">
+      {/* Cart link for mobile */}
+      <div className="mobile-nav-section">
+        <div className="mobile-nav-title">Your Cart</div>
+        <Link to="/cart" onClick={() => setOpenSidebar(false)}>
+          View Cart {cartCount > 0 && `(${cartCount})`}
+        </Link>
+      </div>
+    
       {/* Reference Standards */}
       <div className="mobile-nav-section">
         <div className="mobile-nav-title">Reference Standards</div>

@@ -1,6 +1,8 @@
-// AdminDashboard.js - PC View Enlarged Version
-import { useState, useEffect } from "react";
+// AdminDashboard.js
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import './css/AdminDashboard.css';
 
 // Define your product type categories
 const productTypeCategories = {
@@ -80,77 +82,238 @@ const commonMaterials = [
 function AdminDashboard() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); 
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
-  const [isLargeScreen, setIsLargeScreen] = useState(window.innerWidth > 1440);
-  
+  const [currentModalImage, setCurrentModalImage] = useState(0);
+
+  const [filterType, setFilterType] = useState("all");
+    const [isReordering, setIsReordering] = useState(false); // Toggle for drag mode
+
+   const handleOnDragEnd = async (result) => {
+    if (!result.destination) return;
+    
+    // 1. Reorder locally first (UI update)
+    const items = Array.from(filteredProductList);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // Update local state immediately so user sees the change
+    // Note: We need to update the main 'products' array to reflect the change
+    const newProductState = products.map(p => {
+      // If it's the item we moved, or items shifted, we just rely on the reordered 'items'
+      // But since filteredProductList might be a subset, this is tricky.
+      // For simplicity, we update the UI based on the reordered list if filter is 'all'
+      return p;
+    });
+    
+    // Ideally, we replace the products list with the new order if no filter is active
+    if (searchTerm === "" && filterType === "all") {
+       setProducts(items);
+    }
+
+    // 2. Prepare data for backend
+    // We send { id: 1, sort_order: 0 }, { id: 5, sort_order: 1 }...
+    const orderData = items.map((item, index) => ({
+      id: item.id,
+      sort_order: index
+    }));
+
+    try {
+      const token = localStorage.getItem("admin_token");
+      await fetch(`${backendUrl}/api/products/reorder`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ items: orderData })
+      });
+      console.log("Sort order saved");
+    } catch (err) {
+      console.error("Failed to save sort order", err);
+      alert("Failed to save new order to server");
+    }
+  };
+
+  // Form data for adding new product
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    short_description: "",
     category: "",
+    subcategory: "",
     type: "calibration_block",
     price: "",
+    compare_price: "",
+    cost_price: "",
+    stock_quantity: "10",
+    sku: "",
     dimensions: "",
     tolerance: "",
     flaws: "",
+    weight: "",
+    standards: "",
     materials: [],
     customMaterial: "",
+    specifications: {},
+    features: {},
     images: [],
     mainImageIndex: 0,
-    specifications: {}
+    meta_title: "",
+    meta_description: "",
+    meta_keywords: "",
+    is_featured: false
   });
   
+  // Form data for editing product
+  const [editFormData, setEditFormData] = useState({
+    id: null,
+    name: "",
+    description: "",
+    short_description: "",
+    category: "",
+    subcategory: "",
+    type: "calibration_block",
+    price: "",
+    compare_price: "",
+    cost_price: "",
+    stock_quantity: "10",
+    sku: "",
+    dimensions: "",
+    tolerance: "",
+    flaws: "",
+    weight: "",
+    standards: "",
+    materials: [],
+    customMaterial: "",
+    specifications: {},
+    features: {},
+    existingImages: [],
+    deleteImages: [],
+    newImages: [],
+    mainImageIndex: null,
+    mainImageId: null,
+    meta_title: "",
+    meta_description: "",
+    meta_keywords: "",
+    is_featured: false
+  });
+  
+  // Specification fields management
+  const [specFields, setSpecFields] = useState([
+    { key: "", value: "" }
+  ]);
+  
+  // Edit specification fields
+  const [editSpecFields, setEditSpecFields] = useState([
+    { key: "", value: "" }
+  ]);
+  
+  // Feature fields management
+  const [featureFields, setFeatureFields] = useState([
+    { key: "", value: "" }
+  ]);
+  
+  // Edit feature fields
+  const [editFeatureFields, setEditFeatureFields] = useState([
+    { key: "", value: "" }
+  ]);
+  
   const [formLoading, setFormLoading] = useState(false);
-  const [backendUrl, setBackendUrl] = useState("http://localhost:5000");
+  const [editLoading, setEditLoading] = useState(false);
+  const [backendUrl] = useState("http://192.168.1.9:5001"); 
   const [imagePreview, setImagePreview] = useState([]);
-  const [activeTab, setActiveTab] = useState("basic"); // basic, technical, images
+  const [editImagePreview, setEditImagePreview] = useState({
+    existing: [],
+    new: []
+  });
+  const [activeTab, setActiveTab] = useState("basic"); 
+  const [editActiveTab, setEditActiveTab] = useState("basic");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  
+  // Modal image navigation functions
+  const nextModalImage = () => {
+    if (editingProduct && editingProduct.images && editingProduct.images.length > 1) {
+      setCurrentModalImage((prev) => (prev + 1) % editingProduct.images.length);
+    }
+  };
+
+  const prevModalImage = () => {
+    if (editingProduct && editingProduct.images && editingProduct.images.length > 1) {
+      setCurrentModalImage((prev) => (prev - 1 + editingProduct.images.length) % editingProduct.images.length);
+    }
+  };
   
   // Check screen size
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 1024);
-      setIsLargeScreen(window.innerWidth > 1440);
+      const mobile = window.innerWidth <= 1024;
+      setIsMobile(prev => prev !== mobile ? mobile : prev);
     };
     
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Get categories based on selected type
-  const getCategoriesForType = (type) => {
-    return productTypeCategories[type]?.categories || [];
-  };
-
-  useEffect(() => {
-    const token = localStorage.getItem("admin_token");
-    if (!token) {
-      alert("Please login first");
-      navigate("/admin/login");
-      return;
-    }
-    fetchProducts();
-  }, [navigate]);
-
-  const fetchProducts = async () => {
+  // Fetch all products
+  const fetchProducts = useCallback(async (showFullLoading = false) => {
     try {
-      setLoading(true);
-      const res = await fetch(`${backendUrl}/api/products`);
+      if (showFullLoading) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
+      
+      const token = localStorage.getItem("admin_token");
+      
+      const res = await fetch(`${backendUrl}/api/products?limit=1000`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       const data = await res.json();
       
       if (data.success) {
         setProducts(data.products || []);
-        console.log("Products loaded:", data.products);
+      } else {
+        console.error("Failed to fetch products:", data.message);
       }
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
+  }, [backendUrl]);
+
+  // Initial data loading
+  useEffect(() => {
+    fetchProducts(true);
+  }, [fetchProducts]); 
+  
+  // Derived State for stats
+  const dashboardStats = useMemo(() => {
+    return {
+      total: products.length,
+      calibrationBlocks: products.filter(p => p.type === 'calibration_block').length,
+      flawedSpecimens: products.filter(p => p.type === 'flawed_specimen').length,
+      validationBlocks: products.filter(p => p.type === 'validation_block').length
+    };
+  }, [products]);
+  
+  // Get categories based on selected type
+  const getCategoriesForType = (type) => {
+    return productTypeCategories[type]?.categories || [];
   };
 
-  // Handle image selection
+  // Handle image selection for new product
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     
@@ -169,7 +332,34 @@ function AdminDashboard() {
     setImagePreview(previews);
   };
 
-  // Remove image from selection
+  // Handle image selection for editing product
+  const handleEditImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    
+    if (files.length + editFormData.existingImages.length - editFormData.deleteImages.length > 10) {
+      alert(`Maximum 10 images allowed. You can add ${10 - (editFormData.existingImages.length - editFormData.deleteImages.length)} more.`);
+      return;
+    }
+    
+    // Create preview URLs
+    const newPreviews = files.map(file => ({
+      url: URL.createObjectURL(file),
+      name: file.name,
+      file: file
+    }));
+    
+    setEditImagePreview({
+      ...editImagePreview,
+      new: [...editImagePreview.new, ...newPreviews]
+    });
+    
+    setEditFormData({
+      ...editFormData,
+      newImages: [...editFormData.newImages, ...files]
+    });
+  };
+
+  // Remove image from selection for new product
   const removeImage = (index) => {
     const newImages = [...formData.images];
     newImages.splice(index, 1);
@@ -190,12 +380,96 @@ function AdminDashboard() {
     setImagePreview(newPreviews);
   };
 
-  // Set main image
+  // Remove existing image in edit mode
+  const removeExistingImage = (imageId) => {
+    const targetImage = editFormData.existingImages.find(img => img.id === imageId);
+    if (!targetImage) return;
+    
+    // Add to images to delete
+    const updatedDeleteImages = [...editFormData.deleteImages, imageId];
+    
+    // Filter out from existing images (for UI)
+    const updatedExistingImages = editFormData.existingImages.filter(img => img.id !== imageId);
+    
+    // Check if main image was deleted
+    let newMainImageId = editFormData.mainImageId;
+    if (editFormData.mainImageId === imageId) {
+      newMainImageId = updatedExistingImages.length > 0 
+        ? updatedExistingImages[0].id 
+        : null;
+    }
+    
+    // Update form data
+    setEditFormData({
+      ...editFormData,
+      existingImages: updatedExistingImages,
+      deleteImages: updatedDeleteImages,
+      mainImageId: newMainImageId
+    });
+    
+    // Update preview
+    setEditImagePreview({
+      ...editImagePreview,
+      existing: editImagePreview.existing.filter(img => img.id !== imageId)
+    });
+  };
+
+  // Remove new image in edit mode
+  const removeNewImage = (index) => {
+    const newImages = [...editFormData.newImages];
+    newImages.splice(index, 1);
+    
+    const newPreviews = [...editImagePreview.new];
+    URL.revokeObjectURL(newPreviews[index].url);
+    newPreviews.splice(index, 1);
+    
+    // Check if mainImageIndex needs adjustment
+    let newMainImageIndex = editFormData.mainImageIndex;
+    if (editFormData.mainImageId === null && editFormData.mainImageIndex !== null) {
+      if (index === editFormData.mainImageIndex) {
+        newMainImageIndex = null;
+      } else if (index < editFormData.mainImageIndex) {
+        newMainImageIndex = editFormData.mainImageIndex - 1;
+      }
+    }
+    
+    setEditFormData({
+      ...editFormData,
+      newImages: newImages,
+      mainImageIndex: newMainImageIndex
+    });
+    
+    setEditImagePreview({
+      ...editImagePreview,
+      new: newPreviews
+    });
+  };
+
+  // Set main image for new product
   const setMainImage = (index) => {
     setFormData({ ...formData, mainImageIndex: index });
   };
 
-  // Handle material selection
+  // Set main image in edit mode
+  const setMainImageEdit = (id, isNew = false, newIndex = null) => {
+    if (isNew) {
+      // Setting a new image as main
+      setEditFormData({
+        ...editFormData,
+        mainImageId: null,
+        mainImageIndex: newIndex
+      });
+    } else {
+      // Setting an existing image as main
+      setEditFormData({
+        ...editFormData,
+        mainImageId: id,
+        mainImageIndex: null
+      });
+    }
+  };
+
+  // Handle material selection for new product
   const handleMaterialToggle = (material) => {
     const currentMaterials = [...formData.materials];
     const index = currentMaterials.indexOf(material);
@@ -209,7 +483,21 @@ function AdminDashboard() {
     setFormData({ ...formData, materials: currentMaterials });
   };
 
-  // Add custom material
+  // Handle material selection for edit mode
+  const handleEditMaterialToggle = (material) => {
+    const currentMaterials = [...editFormData.materials];
+    const index = currentMaterials.indexOf(material);
+    
+    if (index === -1) {
+      currentMaterials.push(material);
+    } else {
+      currentMaterials.splice(index, 1);
+    }
+    
+    setEditFormData({ ...editFormData, materials: currentMaterials });
+  };
+
+  // Add custom material for new product
   const addCustomMaterial = () => {
     if (formData.customMaterial.trim() && !formData.materials.includes(formData.customMaterial.trim())) {
       setFormData({
@@ -220,7 +508,18 @@ function AdminDashboard() {
     }
   };
 
-  // Remove material
+  // Add custom material in edit mode
+  const addCustomMaterialEdit = () => {
+    if (editFormData.customMaterial.trim() && !editFormData.materials.includes(editFormData.customMaterial.trim())) {
+      setEditFormData({
+        ...editFormData,
+        materials: [...editFormData.materials, editFormData.customMaterial.trim()],
+        customMaterial: ""
+      });
+    }
+  };
+
+  // Remove material for new product
   const removeMaterial = (material) => {
     setFormData({
       ...formData,
@@ -228,46 +527,252 @@ function AdminDashboard() {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setFormLoading(true);
-
-    console.log("📤 Submitting form data:", formData);
+  // Remove material in edit mode
+  const removeMaterialEdit = (material) => {
+    setEditFormData({
+      ...editFormData,
+      materials: editFormData.materials.filter(m => m !== material)
+    });
+  };
+  
+  // Handle specification field changes for new product
+  const handleSpecFieldChange = (index, field, value) => {
+    const newFields = [...specFields];
+    newFields[index][field] = value;
+    setSpecFields(newFields);
     
-    if (!formData.name || !formData.category || !formData.type) {
-      alert("Please fill all required fields!");
-      setFormLoading(false);
-      return;
+    // Update formData specifications object
+    const specs = {};
+    newFields.forEach(spec => {
+      if (spec.key && spec.value) {
+        specs[spec.key] = spec.value;
+      }
+    });
+    setFormData({...formData, specifications: specs});
+  };
+  
+  // Add a new specification field
+  const addSpecField = () => {
+    setSpecFields([...specFields, { key: "", value: "" }]);
+  };
+  
+  // Remove a specification field
+  const removeSpecField = (index) => {
+    const newFields = [...specFields];
+    newFields.splice(index, 1);
+    setSpecFields(newFields);
+    
+    // Update formData specifications object
+    const specs = {};
+    newFields.forEach(spec => {
+      if (spec.key && spec.value) {
+        specs[spec.key] = spec.value;
+      }
+    });
+    setFormData({...formData, specifications: specs});
+  };
+  
+  // Handle specification field changes for edit product
+  const handleEditSpecFieldChange = (index, field, value) => {
+    const newFields = [...editSpecFields];
+    newFields[index][field] = value;
+    setEditSpecFields(newFields);
+    
+    // Update editFormData specifications object
+    const specs = {};
+    newFields.forEach(spec => {
+      if (spec.key && spec.value) {
+        specs[spec.key] = spec.value;
+      }
+    });
+    setEditFormData({...editFormData, specifications: specs});
+  };
+  
+  // Add a new specification field for edit mode
+  const addEditSpecField = () => {
+    setEditSpecFields([...editSpecFields, { key: "", value: "" }]);
+  };
+  
+  // Remove a specification field for edit mode
+  const removeEditSpecField = (index) => {
+    const newFields = [...editSpecFields];
+    newFields.splice(index, 1);
+    setEditSpecFields(newFields);
+    
+    // Update editFormData specifications object
+    const specs = {};
+    newFields.forEach(spec => {
+      if (spec.key && spec.value) {
+        specs[spec.key] = spec.value;
+      }
+    });
+    setEditFormData({...editFormData, specifications: specs});
+  };
+  
+  // Handle feature field changes for new product
+  const handleFeatureFieldChange = (index, field, value) => {
+    const newFields = [...featureFields];
+    newFields[index][field] = value;
+    setFeatureFields(newFields);
+    
+    // Update formData features object
+    const features = {};
+    newFields.forEach(feature => {
+      if (feature.key && feature.value) {
+        features[feature.key] = feature.value;
+      }
+    });
+    setFormData({...formData, features: features});
+  };
+  
+  // Add a new feature field
+  const addFeatureField = () => {
+    setFeatureFields([...featureFields, { key: "", value: "" }]);
+  };
+  
+  // Remove a feature field
+  const removeFeatureField = (index) => {
+    const newFields = [...featureFields];
+    newFields.splice(index, 1);
+    setFeatureFields(newFields);
+    
+    // Update formData features object
+    const features = {};
+    newFields.forEach(feature => {
+      if (feature.key && feature.value) {
+        features[feature.key] = feature.value;
+      }
+    });
+    setFormData({...formData, features: features});
+  };
+  
+  // Handle feature field changes for edit product
+  const handleEditFeatureFieldChange = (index, field, value) => {
+    const newFields = [...editFeatureFields];
+    newFields[index][field] = value;
+    setEditFeatureFields(newFields);
+    
+    // Update editFormData features object
+    const features = {};
+    newFields.forEach(feature => {
+      if (feature.key && feature.value) {
+        features[feature.key] = feature.value;
+      }
+    });
+    setEditFormData({...editFormData, features: features});
+  };
+  
+  // Add a new feature field for edit mode
+  const addEditFeatureField = () => {
+    setEditFeatureFields([...editFeatureFields, { key: "", value: "" }]);
+  };
+  
+  // Remove a feature field for edit mode
+  const removeEditFeatureField = (index) => {
+    const newFields = [...editFeatureFields];
+    newFields.splice(index, 1);
+    setEditFeatureFields(newFields);
+    
+    // Update editFormData features object
+    const features = {};
+    newFields.forEach(feature => {
+      if (feature.key && feature.value) {
+        features[feature.key] = feature.value;
+      }
+    });
+    setEditFormData({...editFormData, features: features});
+  };
+  
+  // Initialize/reset spec and feature fields when formData changes
+  useEffect(() => {
+    // Initialize spec fields from formData
+    if (formData.specifications && Object.keys(formData.specifications).length > 0) {
+      const newSpecFields = Object.entries(formData.specifications).map(
+        ([key, value]) => ({ key, value })
+      );
+      if (newSpecFields.length > 0) {
+        setSpecFields(newSpecFields);
+      }
     }
     
+    // Initialize feature fields from formData
+    if (formData.features && Object.keys(formData.features).length > 0) {
+      const newFeatureFields = Object.entries(formData.features).map(
+        ([key, value]) => ({ key, value })
+      );
+      if (newFeatureFields.length > 0) {
+        setFeatureFields(newFeatureFields);
+      }
+    }
+  }, []);
+  
+  // Initialize/reset spec and feature fields when editFormData changes
+  useEffect(() => {
+    if (!editFormData.id) return; // Guard clause
+
+    // Initialize spec fields from editFormData
+    if (editFormData.specifications && Object.keys(editFormData.specifications).length > 0) {
+      const newSpecFields = Object.entries(editFormData.specifications).map(
+        ([key, value]) => ({ key, value })
+      );
+      setEditSpecFields(newSpecFields);
+    } else {
+      setEditSpecFields([{ key: "", value: "" }]);
+    }
+    
+    // Initialize feature fields from editFormData
+    if (editFormData.features && Object.keys(editFormData.features).length > 0) {
+      const newFeatureFields = Object.entries(editFormData.features).map(
+        ([key, value]) => ({ key, value })
+      );
+      setEditFeatureFields(newFeatureFields);
+    } else {
+      setEditFeatureFields([{ key: "", value: "" }]);
+    }
+  }, [editFormData.id, editFormData.specifications, editFormData.features]);
+
+  // Handle form submission for new product
+// Handle form submission for new product
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setFormLoading(true);
+  
+  if (!formData.name || !formData.category || !formData.type) {
+    alert("Please fill all required fields (name, category, and type)!");
+    setFormLoading(false);
+    return;
+  }
+  
+  try {
     const token = localStorage.getItem("admin_token");
     const data = new FormData();
     
-    // Basic fields
+    // Send ALL form data including price, materials, etc.
     data.append("name", formData.name);
-    data.append("description", formData.description);
+    data.append("description", formData.description || "");
+    data.append("short_description", formData.short_description || "");
     data.append("category", formData.category);
+    data.append("subcategory", formData.subcategory || "");
     data.append("type", formData.type);
-    data.append("price", formData.price || 0);
+    data.append("price", formData.price || "0");
+    data.append("compare_price", formData.compare_price || "");
+    data.append("cost_price", formData.cost_price || "");
+    data.append("stock_quantity", formData.stock_quantity || "10");
+    data.append("sku", formData.sku || "");
+    data.append("dimensions", formData.dimensions || "");
+    data.append("tolerance", formData.tolerance || "");
+    data.append("flaws", formData.flaws || "");
+    data.append("weight", formData.weight || "");
+    data.append("standards", formData.standards || "");
+    data.append("meta_title", formData.meta_title || "");
+    data.append("meta_description", formData.meta_description || "");
+    data.append("meta_keywords", formData.meta_keywords || "");
+    data.append("is_featured", formData.is_featured);
     
-    // New fields
-    if (formData.dimensions) {
-      data.append("dimensions", formData.dimensions);
-    }
-    if (formData.tolerance) {
-      data.append("tolerance", formData.tolerance);
-    }
-    if (formData.flaws) {
-      data.append("flaws", formData.flaws);
-    }
-    
-    // Materials as JSON array
-    data.append("materials", JSON.stringify(formData.materials));
-    
-    // Specifications as JSON
-    if (Object.keys(formData.specifications).length > 0) {
-      data.append("specifications", JSON.stringify(formData.specifications));
-    }
+    // Send JSON fields properly
+    data.append("materials", JSON.stringify(formData.materials || []));
+    data.append("specifications", JSON.stringify(formData.specifications || {}));
+    data.append("features", JSON.stringify(formData.features || {}));
     
     // Main image index
     data.append("mainImageIndex", formData.mainImageIndex);
@@ -278,11 +783,91 @@ function AdminDashboard() {
         data.append("images", image);
       });
     }
-
+    
+    console.log("📤 Sending product data to backend...");
+    console.log("Product name:", formData.name);
+    console.log("Price:", formData.price);
+    console.log("Images:", formData.images?.length || 0);
+    
+    // Send request
+    const res = await fetch(`${backendUrl}/api/products`, {
+      method: "POST",
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: data
+    });
+    
+    const result = await res.json();
+    console.log("📥 Backend response:", result);
+    
+    if (result.success) {
+      alert("Product added successfully!");
+      resetForm();
+      fetchProducts(false);
+    } else {
+      alert(`Error: ${result.message || "Failed to add product"}`);
+    }
+  } catch (error) {
+    console.error("Network error:", error);
+    alert("Failed to add product. Check your connection and try again.");
+  } finally {
+    setFormLoading(false);
+  }
+};
+  
+  // Handle form submission for editing product
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
+    
+    if (!editFormData.name || !editFormData.category || !editFormData.type) {
+      alert("Please fill all required fields (name, category, and type)!");
+      setEditLoading(false);
+      return;
+    }
+    
     try {
-      console.log("🚀 Sending request to:", `${backendUrl}/api/products`);
-      const res = await fetch(`${backendUrl}/api/products`, {
-        method: "POST",
+      const token = localStorage.getItem("admin_token");
+      const data = new FormData();
+      
+      // Basic fields
+      Object.entries(editFormData).forEach(([key, value]) => {
+        if (key !== 'newImages' && key !== 'existingImages' && key !== 'customMaterial' && 
+            key !== 'deleteImages' && key !== 'mainImageIndex' && key !== 'mainImageId' && 
+            key !== 'specifications' && key !== 'features' && key !== 'materials') {
+          data.append(key, value);
+        }
+      });
+      
+      // JSON fields
+      data.append("specifications", JSON.stringify(editFormData.specifications || {}));
+      data.append("features", JSON.stringify(editFormData.features || {}));
+      data.append("materials", JSON.stringify(editFormData.materials || []));
+      
+      // Images to delete
+      if (editFormData.deleteImages.length > 0) {
+        data.append("deleteImages", JSON.stringify(editFormData.deleteImages));
+      }
+      
+      // Main image selection
+      if (editFormData.mainImageId !== null) {
+        data.append("mainImageId", editFormData.mainImageId);
+      } else if (editFormData.mainImageIndex !== null) {
+        data.append("mainImageIndex", editFormData.mainImageIndex);
+      }
+      
+      // Add new images
+      if (editFormData.newImages && editFormData.newImages.length > 0) {
+        editFormData.newImages.forEach((image) => {
+          data.append("images", image);
+        });
+      }
+      
+      // Send request
+      console.log(`Updating product ${editFormData.id}`);
+      const res = await fetch(`${backendUrl}/api/products/${editFormData.id}`, {
+        method: "PUT",
         headers: {
           'Authorization': `Bearer ${token}`
         },
@@ -290,40 +875,56 @@ function AdminDashboard() {
       });
       
       const result = await res.json();
-      console.log("📥 Response:", result);
-
+      
       if (result.success) {
-        alert("✅ Product added successfully!");
-        resetForm();
-        fetchProducts();
+        alert("Product updated successfully!");
+        setShowEditModal(false);
+        setIsEditMode(false);
+        fetchProducts(false); // Refresh without full loading spinner
       } else {
-        alert(`❌ Error: ${result.message || "Unknown error"}`);
+        alert(`Error: ${result.message || "Failed to update product"}`);
       }
     } catch (error) {
-      console.error("❌ Network error:", error);
-      alert("❌ Failed to add product. Check console for details.");
+      console.error("Network error:", error);
+      alert("Failed to update product. Check your connection and try again.");
     } finally {
-      setFormLoading(false);
+      setEditLoading(false);
     }
   };
 
+  // Reset form for new product
   const resetForm = () => {
     setFormData({
       name: "",
       description: "",
+      short_description: "",
       category: "",
+      subcategory: "",
       type: "calibration_block",
       price: "",
+      compare_price: "",
+      cost_price: "",
+      stock_quantity: "10",
+      sku: "",
       dimensions: "",
       tolerance: "",
       flaws: "",
+      weight: "",
+      standards: "",
       materials: [],
       customMaterial: "",
+      specifications: {},
+      features: {},
       images: [],
       mainImageIndex: 0,
-      specifications: {}
+      meta_title: "",
+      meta_description: "",
+      meta_keywords: "",
+      is_featured: false
     });
     setImagePreview([]);
+    setSpecFields([{ key: "", value: "" }]);
+    setFeatureFields([{ key: "", value: "" }]);
     setActiveTab("basic");
     
     // Reset file input
@@ -331,7 +932,7 @@ function AdminDashboard() {
     if (fileInput) fileInput.value = "";
   };
 
-  // Handle type change - reset category when type changes
+  // Handle type change for new product
   const handleTypeChange = (e) => {
     const newType = e.target.value;
     setFormData({
@@ -341,11 +942,25 @@ function AdminDashboard() {
     });
   };
 
+  // Handle type change in edit mode
+  const handleEditTypeChange = (e) => {
+    const newType = e.target.value;
+    setEditFormData({
+      ...editFormData,
+      type: newType,
+      category: ""
+    });
+  };
+
+  // Delete product
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this product?")) return;
+    if (!window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) return;
     
     try {
+      // Don't set full loading for deletion to prevent grid flicker
+      // loading state is handled by the UI refreshing
       const token = localStorage.getItem("admin_token");
+      
       const res = await fetch(`${backendUrl}/api/products/${id}`, {
         method: "DELETE",
         headers: {
@@ -356,638 +971,345 @@ function AdminDashboard() {
       const result = await res.json();
       
       if (result.success) {
-        alert("✅ Product deleted!");
-        fetchProducts();
+        alert("Product deleted successfully!");
+        setShowEditModal(false);
+        fetchProducts(false); // Background refresh
+      } else {
+        alert(`Error: ${result.message || "Failed to delete product"}`);
       }
     } catch (error) {
       console.error("Delete error:", error);
+      alert("Failed to delete product. Please try again.");
     }
   };
 
+  // Logout
   const handleLogout = () => {
-    localStorage.removeItem("admin_token");
-    localStorage.removeItem("admin_data");
-    navigate("/admin/login");
+    if (window.confirm("Are you sure you want to log out?")) {
+      localStorage.removeItem("admin_token");
+      localStorage.removeItem("admin_data");
+      navigate("/admin/login");
+    }
   };
 
   // View product details
   const viewProduct = async (id) => {
     try {
-      const res = await fetch(`${backendUrl}/api/products/${id}`);
+      // OPTIMIZATION: Don't set global loading true, it wipes the grid
+      // Just fetch the details for the modal
+      const token = localStorage.getItem("admin_token");
+      
+      const res = await fetch(`${backendUrl}/api/products/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       const data = await res.json();
+      
       if (data.success) {
-        setEditingProduct(data.product);
+        // Reset modal image index
+        setCurrentModalImage(0);
+        const product = data.product;
+        setEditingProduct(product);
+        
+        // Find main image
+        const mainImage = product.images.find(img => img.isMain);
+        const mainImageId = mainImage ? mainImage.id : (product.images.length > 0 ? product.images[0].id : null);
+        
+        // Set up edit form data
+        setEditFormData({
+          id: product.id,
+          name: product.name || "",
+          description: product.description || "",
+          short_description: product.short_description || "",
+          category: product.category || "",
+          subcategory: product.subcategory || "",
+          type: product.type || "calibration_block",
+          price: product.price || "",
+          compare_price: product.compare_price || "",
+          cost_price: product.cost_price || "",
+          stock_quantity: product.stock_quantity || "0",
+          sku: product.sku || "",
+          dimensions: product.dimensions || "",
+          tolerance: product.tolerance || "",
+          flaws: product.flaws || "",
+          weight: product.weight || "",
+          standards: product.standards || "",
+          materials: Array.isArray(product.materials) ? product.materials : [],
+          customMaterial: "",
+          specifications: product.specifications || {},
+          features: product.features || {},
+          existingImages: product.images || [],
+          deleteImages: [],
+          newImages: [],
+          mainImageId: mainImageId,
+          mainImageIndex: null,
+          meta_title: product.meta_title || "",
+          meta_description: product.meta_description || "",
+          meta_keywords: product.meta_keywords || "",
+          is_featured: product.is_featured || false
+        });
+        
+        // Set up edit spec fields
+        const specs = product.specifications || {};
+        if (Object.keys(specs).length > 0) {
+          setEditSpecFields(Object.entries(specs).map(([key, value]) => ({ key, value })));
+        } else {
+          setEditSpecFields([{ key: "", value: "" }]);
+        }
+        
+        // Set up edit feature fields
+        const features = product.features || {};
+        if (Object.keys(features).length > 0) {
+          setEditFeatureFields(Object.entries(features).map(([key, value]) => ({ key, value })));
+        } else {
+          setEditFeatureFields([{ key: "", value: "" }]);
+        }
+        
+        // Set up image previews
+        setEditImagePreview({
+          existing: product.images || [],
+          new: []
+        });
+        
         setShowEditModal(true);
+        setIsEditMode(false);
+        setEditActiveTab("basic");
+      } else {
+        alert("Failed to load product details.");
       }
     } catch (error) {
       console.error("Error fetching product:", error);
+      alert("Failed to load product details. Please try again.");
     }
   };
 
-  // Responsive styles with enlarged PC view
-  const styles = {
-    // Dashboard container - ENLARGED for PC
-    dashboardContainer: {
-      padding: isMobile ? "15px" : "30px",
-      maxWidth: isLargeScreen ? "1800px" : "1400px",
-      margin: "0 auto",
-      background: "#f5f5f5",
-      minHeight: "100vh",
-      fontSize: isLargeScreen ? "1.05rem" : "1rem"
-    },
-    
-    // Header - ENLARGED for PC
-    header: {
-      display: "flex",
-      flexDirection: isMobile ? "column" : "row",
-      justifyContent: "space-between",
-      marginBottom: "30px",
-      alignItems: isMobile ? "flex-start" : "center",
-      background: "white",
-      padding: isMobile ? "15px" : "25px",
-      borderRadius: "12px",
-      boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-      gap: isMobile ? "20px" : "0"
-    },
-    
-    headerTitleContainer: {
-      width: isMobile ? "100%" : "auto"
-    },
-    
-    headerTitle: {
-      margin: 0,
-      color: "#333",
-      fontSize: isMobile ? "1.3rem" : isLargeScreen ? "1.8rem" : "1.5rem"
-    },
-    
-    headerSubtitle: {
-      marginTop: "8px",
-      color: "#666",
-      fontSize: isMobile ? "12px" : isLargeScreen ? "1rem" : "14px"
-    },
-    
-    headerActions: {
-      display: "flex",
-      flexDirection: isMobile ? "column" : "row",
-      gap: "12px",
-      width: isMobile ? "100%" : "auto",
-      alignItems: isMobile ? "stretch" : "center"
-    },
-    
-    backendUrlInput: {
-      padding: isMobile ? "10px 12px" : "12px 15px",
-      border: "1px solid #ced4da",
-      borderRadius: "6px",
-      width: isMobile ? "100%" : isLargeScreen ? "300px" : "250px",
-      fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "14px"
-    },
-    
-    actionButton: {
-      padding: isMobile ? "12px" : "12px 20px",
-      background: "#007bff",
-      color: "white",
-      border: "none",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "14px",
-      width: isMobile ? "100%" : "auto",
-      textAlign: "center",
-      fontWeight: "500",
-      transition: "all 0.2s"
-    },
-    
-    logoutButton: {
-      padding: isMobile ? "12px" : "12px 20px",
-      background: "#dc3545",
-      color: "white",
-      border: "none",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "14px",
-      width: isMobile ? "100%" : "auto",
-      textAlign: "center",
-      fontWeight: "500",
-      transition: "all 0.2s"
-    },
-    
-    // Grid layout - ENLARGED for PC
-    gridContainer: {
-      display: "grid",
-      gridTemplateColumns: isMobile ? "1fr" : isLargeScreen ? "550px 1fr" : "500px 1fr",
-      gap: isMobile ? "20px" : "40px",
-      alignItems: "start"
-    },
-    
-    // Form container - ENLARGED for PC
-    formContainer: {
-      background: "white",
-      padding: isMobile ? "20px" : isLargeScreen ? "35px" : "30px",
-      borderRadius: "12px",
-      boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-      height: "fit-content",
-      position: "sticky",
-      top: "30px"
-    },
-    
-    formTitle: {
-      marginBottom: "25px",
-      color: "#333",
-      fontSize: isMobile ? "1.1rem" : isLargeScreen ? "1.5rem" : "1.3rem",
-      fontWeight: "600"
-    },
-    
-    // Tab navigation - ENLARGED for PC
-    tabContainer: {
-      display: "flex",
-      gap: isMobile ? "3px" : "8px",
-      marginBottom: "0",
-      overflowX: isMobile ? "auto" : "visible",
-      whiteSpace: "nowrap",
-      paddingBottom: "8px"
-    },
-    
-    tabButton: (isActive) => ({
-      padding: isMobile ? "10px 15px" : isLargeScreen ? "15px 25px" : "12px 20px",
-      background: isActive ? "#007bff" : "#f8f9fa",
-      color: isActive ? "white" : "#495057",
-      border: "none",
-      cursor: "pointer",
-      fontWeight: isActive ? "600" : "500",
-      borderRadius: "8px 8px 0 0",
-      fontSize: isMobile ? "13px" : isLargeScreen ? "1rem" : "14px",
-      minWidth: isMobile ? "90px" : "110px",
-      flex: isMobile ? "1" : "none",
-      borderBottom: isActive ? "3px solid #007bff" : "3px solid transparent",
-      transition: "all 0.2s"
-    }),
-    
-    // Form section - ENLARGED for PC
-    formSection: {
-      background: "#fff",
-      padding: isMobile ? "15px" : isLargeScreen ? "30px" : "25px",
-      borderRadius: "0 0 12px 12px",
-      border: "1px solid #dee2e6",
-      borderTop: "none"
-    },
-    
-    label: {
-      display: "block",
-      marginBottom: "8px",
-      fontWeight: "500",
-      color: "#333",
-      fontSize: isMobile ? "13px" : isLargeScreen ? "1rem" : "14px"
-    },
-    
-    input: {
-      width: "100%",
-      padding: isMobile ? "10px 12px" : isLargeScreen ? "14px 16px" : "12px 14px",
-      border: "1px solid #ced4da",
-      borderRadius: "8px",
-      fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "15px",
-      transition: "border-color 0.2s, box-shadow 0.2s"
-    },
-    
-    select: {
-      width: "100%",
-      padding: isMobile ? "10px 12px" : isLargeScreen ? "14px 16px" : "12px 14px",
-      border: "1px solid #ced4da",
-      borderRadius: "8px",
-      background: "white",
-      fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "15px",
-      transition: "border-color 0.2s, box-shadow 0.2s"
-    },
-    
-    textarea: {
-      width: "100%",
-      padding: isMobile ? "10px 12px" : isLargeScreen ? "14px 16px" : "12px 14px",
-      border: "1px solid #ced4da",
-      borderRadius: "8px",
-      resize: "vertical",
-      fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "15px",
-      transition: "border-color 0.2s, box-shadow 0.2s"
-    },
-    
-    formRow: {
-      display: "grid",
-      gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-      gap: isMobile ? "12px" : "20px",
-      marginBottom: isMobile ? "18px" : "25px"
-    },
-    
-    // Material tags - ENLARGED for PC
-    materialTag: (isSelected) => ({
-      display: "inline-block",
-      padding: isMobile ? "6px 10px" : isLargeScreen ? "8px 14px" : "7px 12px",
-      margin: "4px",
-      background: isSelected ? "#007bff" : "#e9ecef",
-      color: isSelected ? "white" : "#333",
-      borderRadius: "20px",
-      cursor: "pointer",
-      fontSize: isMobile ? "12px" : isLargeScreen ? "0.95rem" : "13px",
-      border: isSelected ? "2px solid #0056b3" : "2px solid transparent",
-      transition: "all 0.2s",
-      fontWeight: isSelected ? "500" : "400"
-    }),
-    
-    selectedMaterialTag: {
-      display: "inline-flex",
-      alignItems: "center",
-      padding: isMobile ? "6px 10px" : isLargeScreen ? "8px 14px" : "7px 12px",
-      margin: "4px",
-      background: "#28a745",
-      color: "white",
-      borderRadius: "20px",
-      fontSize: isMobile ? "12px" : isLargeScreen ? "0.95rem" : "13px",
-      fontWeight: "500"
-    },
-    
-    // Image preview - ENLARGED for PC
-    imagePreviewContainer: {
-      display: "grid",
-      gridTemplateColumns: isMobile ? "repeat(auto-fill, minmax(80px, 1fr))" 
-                         : isLargeScreen ? "repeat(auto-fill, minmax(130px, 1fr))" 
-                         : "repeat(auto-fill, minmax(110px, 1fr))",
-      gap: isMobile ? "10px" : "15px",
-      marginTop: "15px"
-    },
-    
-    imagePreview: (isMain) => ({
-      position: "relative",
-      border: isMain ? "3px solid #28a745" : "1px solid #dee2e6",
-      borderRadius: "10px",
-      overflow: "hidden",
-      aspectRatio: "1",
-      cursor: "pointer",
-      transition: "transform 0.2s, box-shadow 0.2s"
-    }),
-    
-    // Summary section - ENLARGED for PC
-    summarySection: {
-      marginTop: "25px",
-      padding: isMobile ? "15px" : isLargeScreen ? "25px" : "20px",
-      background: "#f8f9fa",
-      borderRadius: "10px",
-      border: "1px solid #dee2e6",
-      fontSize: isMobile ? "13px" : isLargeScreen ? "1rem" : "14px"
-    },
-    
-    summaryTitle: {
-      margin: "0 0 15px 0",
-      color: "#333",
-      fontSize: isMobile ? "14px" : isLargeScreen ? "1.2rem" : "16px",
-      fontWeight: "600"
-    },
-    
-    // Action buttons - ENLARGED for PC
-    formActions: {
-      display: "flex",
-      flexDirection: isMobile ? "column" : "row",
-      gap: isMobile ? "10px" : "15px",
-      marginTop: "25px"
-    },
-    
-    resetButton: {
-      flex: isMobile ? "none" : 1,
-      padding: isMobile ? "12px" : isLargeScreen ? "16px" : "14px",
-      background: "#6c757d",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "15px",
-      width: isMobile ? "100%" : "auto",
-      fontWeight: "500",
-      transition: "all 0.2s"
-    },
-    
-    submitButton: (loading) => ({
-      background: loading ? "#6c757d" : "#28a745",
-      color: "white",
-      padding: isMobile ? "12px" : isLargeScreen ? "16px" : "14px",
-      border: "none",
-      borderRadius: "8px",
-      cursor: loading ? "not-allowed" : "pointer",
-      fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "16px",
-      fontWeight: "600",
-      flex: isMobile ? "none" : 2,
-      width: isMobile ? "100%" : "auto",
-      transition: "all 0.2s"
-    }),
-    
-    // Products header - ENLARGED for PC
-    productsHeader: {
-      display: "flex",
-      flexDirection: isMobile ? "column" : "row",
-      justifyContent: "space-between",
-      alignItems: isMobile ? "flex-start" : "center",
-      marginBottom: "25px",
-      background: "white",
-      padding: isMobile ? "15px" : isLargeScreen ? "25px" : "20px",
-      borderRadius: "12px",
-      boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-      gap: isMobile ? "15px" : "0"
-    },
-    
-    productsTitle: {
-      margin: 0,
-      fontSize: isMobile ? "1.1rem" : isLargeScreen ? "1.5rem" : "1.3rem",
-      fontWeight: "600"
-    },
-    
-    statsContainer: {
-      display: "flex",
-      gap: isMobile ? "8px" : "12px",
-      width: isMobile ? "100%" : "auto",
-      justifyContent: isMobile ? "space-between" : "flex-end"
-    },
-    
-    statBadge: {
-      padding: isMobile ? "6px 10px" : isLargeScreen ? "10px 16px" : "8px 14px",
-      borderRadius: "8px",
-      fontSize: isMobile ? "12px" : isLargeScreen ? "1rem" : "14px",
-      textAlign: "center",
-      flex: isMobile ? "1" : "none",
-      fontWeight: "500"
-    },
-    
-    // Products grid - ENLARGED for PC
-    productsGrid: {
-      display: "grid",
-      gridTemplateColumns: isMobile ? "1fr" 
-                         : isLargeScreen ? "repeat(auto-fill, minmax(350px, 1fr))" 
-                         : "repeat(auto-fill, minmax(320px, 1fr))",
-      gap: isMobile ? "15px" : "25px"
-    },
-    
-    // Product card - ENLARGED for PC
-    productCard: {
-      background: "white",
-      borderRadius: "12px",
-      overflow: "hidden",
-      boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-      transition: "transform 0.3s, box-shadow 0.3s",
-      border: "1px solid #e9ecef"
-    },
-    
-    productImageContainer: {
-      height: isMobile ? "160px" : isLargeScreen ? "220px" : "200px",
-      background: "#f8f9fa",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      overflow: "hidden",
-      position: "relative"
-    },
-    
-    productInfo: {
-      padding: isMobile ? "15px" : isLargeScreen ? "25px" : "20px"
-    },
-    
-    productName: {
-      margin: "0 0 12px 0",
-      fontSize: isMobile ? "15px" : isLargeScreen ? "1.3rem" : "18px",
-      color: "#333",
-      fontWeight: "600",
-      lineHeight: "1.3"
-    },
-    
-    productCategory: {
-      fontSize: isMobile ? "12px" : isLargeScreen ? "1rem" : "14px",
-      color: "#0066cc",
-      marginBottom: "12px",
-      padding: "6px 12px",
-      background: "#e7f5ff",
-      borderRadius: "6px",
-      display: "inline-block",
-      fontWeight: "500"
-    },
-    
-    productDescription: {
-      fontSize: isMobile ? "13px" : isLargeScreen ? "1rem" : "15px",
-      color: "#666",
-      margin: "0 0 15px 0",
-      lineHeight: "1.5"
-    },
-    
-    productPrice: {
-      fontWeight: "bold",
-      fontSize: isMobile ? "18px" : isLargeScreen ? "1.5rem" : "20px",
-      color: "#28a745"
-    },
-    
-    productActions: {
-      display: "flex",
-      gap: "10px"
-    },
-    
-    viewButton: {
-      background: "#007bff",
-      color: "white",
-      border: "none",
-      padding: isMobile ? "8px 12px" : isLargeScreen ? "12px 18px" : "10px 16px",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontSize: isMobile ? "13px" : isLargeScreen ? "1rem" : "14px",
-      fontWeight: "500",
-      transition: "all 0.2s"
-    },
-    
-    deleteButton: {
-      background: "#dc3545",
-      color: "white",
-      border: "none",
-      padding: isMobile ? "8px 12px" : isLargeScreen ? "12px 18px" : "10px 16px",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontSize: isMobile ? "13px" : isLargeScreen ? "1rem" : "14px",
-      fontWeight: "500",
-      transition: "all 0.2s"
-    },
-    
-    // Modal styles - ENLARGED for PC
-    modalOverlay: {
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: "rgba(0,0,0,0.8)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 1000,
-      padding: isMobile ? "15px" : "30px"
-    },
-    
-    modalContent: {
-      background: "white",
-      borderRadius: "16px",
-      maxWidth: isLargeScreen ? "1000px" : "800px",
-      width: "100%",
-      maxHeight: "90vh",
-      overflow: "auto",
-      boxShadow: "0 10px 40px rgba(0,0,0,0.3)"
-    },
-    
-    modalHeader: {
-      padding: isMobile ? "20px" : "25px",
-      borderBottom: "1px solid #dee2e6",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      position: "sticky",
-      top: 0,
-      background: "white",
-      zIndex: 1
-    },
-    
-    modalTitle: {
-      margin: 0,
-      fontSize: isMobile ? "1.2rem" : isLargeScreen ? "1.6rem" : "1.4rem",
-      fontWeight: "600"
-    },
-    
-    modalBody: {
-      padding: isMobile ? "20px" : "30px"
-    },
-    
-    modalFooter: {
-      padding: isMobile ? "20px" : "25px",
-      borderTop: "1px solid #dee2e6",
-      display: "flex",
-      flexDirection: isMobile ? "column" : "row",
-      gap: "12px",
-      justifyContent: "flex-end"
-    },
-    
-    modalButton: {
-      padding: isMobile ? "12px 18px" : "14px 24px",
-      background: "#6c757d",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "15px",
-      fontWeight: "500",
-      width: isMobile ? "100%" : "auto",
-      transition: "all 0.2s"
-    },
-    
-    modalDeleteButton: {
-      padding: isMobile ? "12px 18px" : "14px 24px",
-      background: "#dc3545",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "15px",
-      fontWeight: "500",
-      width: isMobile ? "100%" : "auto",
-      transition: "all 0.2s"
+  // Switch to edit mode
+  const enterEditMode = () => {
+    setIsEditMode(true);
+  };
+
+  // Cancel edit mode
+  const cancelEditMode = () => {
+    if (editFormData.newImages.length > 0 || editFormData.deleteImages.length > 0) {
+      if (!window.confirm("You have unsaved changes. Are you sure you want to discard them?")) {
+        return;
+      }
     }
+    
+    // Revoke any object URLs for new image previews
+    editImagePreview.new.forEach(img => {
+      if (img.url.startsWith('blob:')) {
+        URL.revokeObjectURL(img.url);
+      }
+    });
+    
+    // Reset to view mode
+    setIsEditMode(false);
+    
+    // Reload product data to reset form
+    viewProduct(editFormData.id);
+  };
+  
+  // OPTIMIZATION: Use useMemo instead of useCallback to prevent "function identity" issues
+  const filteredProductList = useMemo(() => {
+    if (!searchTerm && filterType === 'all') return products;
+    
+    return products.filter(product => {
+      // Filter by type
+      if (filterType !== 'all' && product.type !== filterType) {
+        return false;
+      }
+      
+      // Filter by search term
+      if (searchTerm) {
+        const search = searchTerm.toLowerCase();
+        return (
+          product.name.toLowerCase().includes(search) ||
+          product.description?.toLowerCase().includes(search) ||
+          product.category.toLowerCase().includes(search)
+        );
+      }
+      
+      return true;
+    });
+  }, [products, searchTerm, filterType]);
+  
+  // Format price with rupee symbol
+  const formatPrice = (price) => {
+    if (!price) return "₹0.00";
+    return `₹${parseFloat(price).toFixed(2)}`;
+  };
+  
+  // Helper to safely get image URL (Handles both string and object formats)
+  const getImageUrl = (input) => {
+    if (!input) return '/placeholder-image.png';
+
+    let path = input;
+
+    // Check if path is an image object (e.g. { url: '...' } or { path: '...' })
+    if (typeof path === 'object' && path !== null) {
+      path = path.url || path.path;
+    }
+
+    // Double check it's a string now
+    if (!path || typeof path !== 'string') return '/placeholder-image.png';
+
+    // Check if absolute URL
+    if (path.startsWith('http') || path.startsWith('blob:')) {
+      return path;
+    }
+
+    // It's a relative path, prepend backend URL
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${backendUrl}${cleanPath}`;
+  };
+
+  // Safe image error handler
+  const handleImageError = (e) => {
+    // Prevents infinite loop if placeholder is also missing
+    if (e.target.src.includes('placeholder-image.png')) return;
+    e.target.src = '/placeholder-image.png';
   };
 
   return (
-    <div style={styles.dashboardContainer}>
-      {/* Header - ENLARGED */}
-      <header style={styles.header}>
-        <div style={styles.headerTitleContainer}>
-          <h1 style={styles.headerTitle}>
-            🛠️ Admin Dashboard
-          </h1>
-          <p style={styles.headerSubtitle}>
-            Manage your NDT products with enhanced features
-          </p>
+    <div className="admin-dashboard">
+      {/* Header */}
+      <div className="dashboard-header">
+        <div className="header-left">
+          <h1><i className="fas fa-toolbox"></i> DAKS NDT Admin</h1>
+          <p>Manage your NDT products catalog</p>
         </div>
-        <div style={styles.headerActions}>
-          <input 
-            type="text" 
-            value={backendUrl}
-            onChange={(e) => setBackendUrl(e.target.value)}
-            style={styles.backendUrlInput}
-            placeholder="Backend URL"
-          />
+        <div className="header-right">
           <button 
-            onClick={fetchProducts} 
-            style={styles.actionButton}
+            onClick={() => fetchProducts(true)} 
+            className="refresh-button"
+            disabled={loading || isRefreshing}
           >
-            🔄 Refresh Products
+            <button 
+  onClick={() => navigate('/admin/orders')} 
+  className="refresh-button" 
+  style={{marginRight: '10px', backgroundColor: '#28a745'}}
+>
+  <i className="fas fa-shopping-cart"></i> Manage Orders
+</button>
+            <i className={`fas fa-sync-alt ${isRefreshing ? 'fa-spin' : ''}`}></i> Refresh Products
           </button>
           <button 
             onClick={handleLogout}
-            style={styles.logoutButton}
+            className="logout-button"
           >
-            Logout
+            <i className="fas fa-sign-out-alt"></i> Logout
           </button>
         </div>
-      </header>
+      </div>
 
-      <div style={styles.gridContainer}>
-        {/* Add Product Form - ENLARGED */}
-        <div style={styles.formContainer}>
-          <h3 style={styles.formTitle}>
-            ➕ Add New Product
-          </h3>
+      {/* Dashboard Stats */}
+      <div className="dashboard-stats">
+        <div className="stat-card">
+          <div className="stat-icon"><i className="fas fa-box"></i></div>
+          <div className="stat-content">
+            <h3>{dashboardStats.total}</h3>
+            <p>Total Products</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon blue"><i className="fas fa-ruler"></i></div>
+          <div className="stat-content">
+            <h3>{dashboardStats.calibrationBlocks}</h3>
+            <p>Calibration Blocks</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon purple"><i className="fas fa-flask"></i></div>
+          <div className="stat-content">
+            <h3>{dashboardStats.flawedSpecimens}</h3>
+            <p>Flawed Specimens</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon green"><i className="fas fa-check-circle"></i></div>
+          <div className="stat-content">
+            <h3>{dashboardStats.validationBlocks}</h3>
+            <p>Validation Blocks</p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="dashboard-content">
+        {/* Add Product Form */}
+        <div className="product-form-container">
+          <h2><i className="fas fa-plus-circle"></i> Add New Product</h2>
           
           {/* Tab Navigation */}
-          <div style={styles.tabContainer}>
+          <div className="form-tabs">
             <button 
-              style={styles.tabButton(activeTab === "basic")}
+              type="button"
+              className={activeTab === "basic" ? "tab-active" : ""}
               onClick={() => setActiveTab("basic")}
             >
-              📝 Basic Info
+              <i className="fas fa-info-circle"></i> Basic Info
             </button>
             <button 
-              style={styles.tabButton(activeTab === "technical")}
+              type="button"
+              className={activeTab === "technical" ? "tab-active" : ""}
               onClick={() => setActiveTab("technical")}
             >
-              🔧 Technical
+              <i className="fas fa-cogs"></i> Technical
             </button>
             <button 
-              style={styles.tabButton(activeTab === "images")}
+              type="button"
+              className={activeTab === "meta" ? "tab-active" : ""}
+              onClick={() => setActiveTab("meta")}
+            >
+              <i className="fas fa-tags"></i> Meta Data
+            </button>
+            <button 
+              type="button"
+              className={activeTab === "images" ? "tab-active" : ""}
               onClick={() => setActiveTab("images")}
             >
-              🖼️ Images ({formData.images.length})
+              <i className="fas fa-images"></i> Images ({imagePreview.length})
             </button>
           </div>
           
-          <form onSubmit={handleSubmit}>
-            <div style={styles.formSection}>
+          <form onSubmit={handleSubmit} className="product-form">
+            <div className="tab-content">
               {/* BASIC INFO TAB */}
               {activeTab === "basic" && (
-                <>
-                  {/* Product Name */}
-                  <div style={{ marginBottom: isMobile ? "18px" : "25px" }}>
-                    <label style={styles.label}>Product Name *</label>
-                    <input
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      required
-                      placeholder="e.g., ASME Calibration Block IIW Type"
-                      style={styles.input}
-                    />
+                <div className="form-section">
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Product Name *</label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        required
+                        placeholder="e.g., ASME V Calibration Block"
+                        className="form-control"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>SKU</label>
+                      <input
+                        type="text"
+                        value={formData.sku}
+                        onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                        placeholder="e.g., CB-ASME-001 (generated if empty)"
+                        className="form-control"
+                      />
+                    </div>
                   </div>
                   
-                  {/* Description */}
-                  <div style={{ marginBottom: isMobile ? "18px" : "25px" }}>
-                    <label style={styles.label}>Description *</label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({...formData, description: e.target.value})}
-                      required
-                      placeholder="Detailed description of the product..."
-                      style={{ ...styles.textarea, height: isMobile ? "100px" : "120px" }}
-                    />
-                  </div>
-                  
-                  {/* Type and Category */}
-                  <div style={styles.formRow}>
-                    <div>
-                      <label style={styles.label}>Product Type *</label>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Product Type *</label>
                       <select
                         value={formData.type}
                         onChange={handleTypeChange}
-                        style={styles.select}
+                        className="form-control"
                       >
                         <option value="calibration_block">Calibration Block</option>
                         <option value="flawed_specimen">Flawed Specimen</option>
@@ -995,13 +1317,13 @@ function AdminDashboard() {
                       </select>
                     </div>
                     
-                    <div>
-                      <label style={styles.label}>Category *</label>
+                    <div className="form-group">
+                      <label>Category *</label>
                       <select
                         value={formData.category}
                         onChange={(e) => setFormData({...formData, category: e.target.value})}
                         required
-                        style={styles.select}
+                        className="form-control"
                       >
                         <option value="">Select category</option>
                         {getCategoriesForType(formData.type).map((cat, index) => (
@@ -1011,1054 +1333,1501 @@ function AdminDashboard() {
                     </div>
                   </div>
                   
-                  {/* Price */}
-                  {/* <div style={{ marginBottom: isMobile ? "18px" : "25px" }}>
-                    <label style={styles.label}>Price (₹)</label>
-                    <input
-                      type="number"
-                      value={formData.price}
-                      onChange={(e) => setFormData({...formData, price: e.target.value})}
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
-                      style={styles.input}
-                    />
-                  </div> */}
-                </>
-              )}
-
-              {/* TECHNICAL TAB */}
-              {activeTab === "technical" && (
-                <>
-                  {/* Dimensions */}
-                  <div style={{ marginBottom: isMobile ? "18px" : "25px" }}>
-                    <label style={styles.label}>Dimensions</label>
-                    <input
-                      value={formData.dimensions}
-                      onChange={(e) => setFormData({...formData, dimensions: e.target.value})}
-                      placeholder="e.g., 100mm x 50mm x 25mm"
-                      style={styles.input}
-                    />
-                    <small style={{ 
-                      color: "#666", 
-                      fontSize: isMobile ? "12px" : isLargeScreen ? "0.9rem" : "13px",
-                      marginTop: "5px",
-                      display: "block"
-                    }}>
-                      Enter product dimensions (Length x Width x Height)
-                    </small>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Subcategory</label>
+                      <input
+                        type="text"
+                        value={formData.subcategory}
+                        onChange={(e) => setFormData({...formData, subcategory: e.target.value})}
+                        placeholder="e.g., ASME V Standards"
+                        className="form-control"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Featured Product</label>
+                      <div className="toggle-container">
+                        <label className="toggle">
+                          <input
+                            type="checkbox"
+                            checked={formData.is_featured}
+                            onChange={(e) => setFormData({...formData, is_featured: e.target.checked})}
+                          />
+                          <span className="toggle-slider"></span>
+                        </label>
+                        <span className="toggle-label">
+                          {formData.is_featured ? "Yes" : "No"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   
-                  {/* Tolerance (Optional) */}
-                  <div style={{ marginBottom: isMobile ? "18px" : "25px" }}>
-                    <label style={styles.label}>
-                      Tolerance <span style={{ color: "#666", fontWeight: "normal" }}>(Optional)</span>
-                    </label>
+                  <div className="form-group">
+                    <label>Short Description</label>
                     <input
+                      type="text"
+                      value={formData.short_description}
+                      onChange={(e) => setFormData({...formData, short_description: e.target.value})}
+                      placeholder="Brief description (shown in product lists)"
+                      className="form-control"
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Full Description *</label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      placeholder="Detailed product description..."
+                      rows="5"
+                      className="form-control"
+                    />
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Price (₹)</label>
+                      <input
+                        type="number"
+                        value={formData.price}
+                        onChange={(e) => setFormData({...formData, price: e.target.value})}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        className="form-control"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Compare At Price (₹)</label>
+                      <input
+                        type="number"
+                        value={formData.compare_price}
+                        onChange={(e) => setFormData({...formData, compare_price: e.target.value})}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        className="form-control"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Cost Price (₹)</label>
+                      <input
+                        type="number"
+                        value={formData.cost_price}
+                        onChange={(e) => setFormData({...formData, cost_price: e.target.value})}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        className="form-control"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Stock Quantity</label>
+                      <input
+                        type="number"
+                        value={formData.stock_quantity}
+                        onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})}
+                        placeholder="0"
+                        min="0"
+                        step="1"
+                        className="form-control"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* TECHNICAL TAB */}
+              {activeTab === "technical" && (
+                <div className="form-section">
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Dimensions</label>
+                      <input
+                        type="text"
+                        value={formData.dimensions}
+                        onChange={(e) => setFormData({...formData, dimensions: e.target.value})}
+                        placeholder="e.g., 100mm x 50mm x 25mm"
+                        className="form-control"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Weight</label>
+                      <input
+                        type="text"
+                        value={formData.weight}
+                        onChange={(e) => setFormData({...formData, weight: e.target.value})}
+                        placeholder="e.g., 1.5kg"
+                        className="form-control"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Tolerance</label>
+                    <input
+                      type="text"
                       value={formData.tolerance}
                       onChange={(e) => setFormData({...formData, tolerance: e.target.value})}
                       placeholder="e.g., ±0.02mm or ±0.001 inch"
-                      style={styles.input}
+                      className="form-control"
                     />
-                    <small style={{ 
-                      color: "#666", 
-                      fontSize: isMobile ? "12px" : isLargeScreen ? "0.9rem" : "13px",
-                      marginTop: "5px",
-                      display: "block"
-                    }}>
-                      Manufacturing tolerance specification
-                    </small>
                   </div>
                   
-                  {/* Flaws (Optional) */}
-                  <div style={{ marginBottom: isMobile ? "18px" : "25px" }}>
-                    <label style={styles.label}>
-                      Flaws/Defects <span style={{ color: "#666", fontWeight: "normal" }}>(Optional)</span>
-                    </label>
+                  <div className="form-group">
+                    <label>Standards</label>
+                    <input
+                      type="text"
+                      value={formData.standards}
+                      onChange={(e) => setFormData({...formData, standards: e.target.value})}
+                      placeholder="e.g., ASME V, EN 12668"
+                      className="form-control"
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Flaws/Defects</label>
                     <textarea
                       value={formData.flaws}
                       onChange={(e) => setFormData({...formData, flaws: e.target.value})}
-                      placeholder="e.g., Side drilled holes: 1.5mm, 3mm, 6mm diameter&#10;Notches: 2mm x 1mm at 0°, 45°, 90°"
-                      style={{ ...styles.textarea, height: isMobile ? "80px" : "100px" }}
+                      placeholder="e.g., Side drilled holes: 1.5mm, 3mm, 6mm diameter..."
+                      rows="3"
+                      className="form-control"
                     />
-                    <small style={{ 
-                      color: "#666", 
-                      fontSize: isMobile ? "12px" : isLargeScreen ? "0.9rem" : "13px",
-                      marginTop: "5px",
-                      display: "block"
-                    }}>
-                      Describe intentional flaws/defects for testing purposes
-                    </small>
                   </div>
                   
                   {/* Materials Selection */}
-                  <div style={{ marginBottom: isMobile ? "18px" : "25px" }}>
-                    <label style={styles.label}>Materials</label>
+                  <div className="form-group">
+                    <label>Materials</label>
                     
                     {/* Selected Materials */}
                     {formData.materials.length > 0 && (
-                      <div style={{ 
-                        marginBottom: "15px", 
-                        padding: "15px", 
-                        background: "#e8f5e9", 
-                        borderRadius: "8px",
-                        border: "1px solid #c3e6cb"
-                      }}>
-                        <div style={{ 
-                          color: "#2e7d32", 
-                          fontWeight: "600",
-                          fontSize: isMobile ? "13px" : isLargeScreen ? "1rem" : "14px",
-                          marginBottom: "8px"
-                        }}>
+                      <div className="selected-materials">
+                        <div className="selected-materials-header">
                           Selected Materials ({formData.materials.length}):
                         </div>
-                        <div style={{ marginTop: "5px" }}>
-                          {formData.materials.map((mat, idx) => (
-                            <span key={idx} style={styles.selectedMaterialTag}>
-                              {mat}
+                        <div className="selected-materials-list">
+                          {formData.materials.map((material, idx) => (
+                            <div key={idx} className="material-tag selected">
+                              {material}
                               <button
                                 type="button"
-                                onClick={() => removeMaterial(mat)}
-                                style={{
-                                  marginLeft: "8px",
-                                  background: "none",
-                                  border: "none",
-                                  color: "white",
-                                  cursor: "pointer",
-                                  fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "16px",
-                                  fontWeight: "bold"
-                                }}
+                                onClick={() => removeMaterial(material)}
+                                className="remove-material"
                               >
                                 ×
                               </button>
-                            </span>
+                            </div>
                           ))}
                         </div>
                       </div>
                     )}
                     
-                    {/* Common Materials */}
-                    <div style={{ 
-                      maxHeight: "150px", 
-                      overflowY: "auto", 
-                      border: "1px solid #dee2e6", 
-                      padding: "15px",
-                      borderRadius: "8px",
-                      marginBottom: "15px",
-                      background: "#f8f9fa"
-                    }}>
-                      {commonMaterials.map((mat, idx) => (
-                        <span
+                    {/* Material Selection */}
+                    <div className="materials-selection">
+                      {commonMaterials.map((material, idx) => (
+                        <div
                           key={idx}
-                          onClick={() => handleMaterialToggle(mat)}
-                          style={styles.materialTag(formData.materials.includes(mat))}
-                          onMouseEnter={(e) => {
-                            if (!formData.materials.includes(mat)) {
-                              e.currentTarget.style.transform = "translateY(-2px)";
-                              e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!formData.materials.includes(mat)) {
-                              e.currentTarget.style.transform = "translateY(0)";
-                              e.currentTarget.style.boxShadow = "none";
-                            }
-                          }}
+                          onClick={() => handleMaterialToggle(material)}
+                          className={`material-tag ${formData.materials.includes(material) ? 'active' : ''}`}
                         >
-                          {formData.materials.includes(mat) ? "✓ " : ""}{mat}
-                        </span>
+                          {material}
+                        </div>
                       ))}
                     </div>
                     
-                    {/* Custom Material Input */}
-                    <div style={{ 
-                      display: "flex", 
-                      gap: "12px", 
-                      flexDirection: isMobile ? "column" : "row" 
-                    }}>
+                    {/* Custom Material */}
+                    <div className="custom-material-input">
                       <input
+                        type="text"
                         value={formData.customMaterial}
                         onChange={(e) => setFormData({...formData, customMaterial: e.target.value})}
                         placeholder="Add custom material..."
-                        style={{ ...styles.input, flex: 1 }}
+                        className="form-control"
                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomMaterial())}
                       />
                       <button
                         type="button"
                         onClick={addCustomMaterial}
-                        style={{
-                          padding: isMobile ? "12px" : isLargeScreen ? "16px 24px" : "14px 20px",
-                          background: "#007bff",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                          fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "15px",
-                          fontWeight: "500",
-                          whiteSpace: "nowrap"
-                        }}
+                        className="add-material-btn"
                       >
                         Add Material
                       </button>
                     </div>
                   </div>
-                </>
-              )}
-
-              {/* IMAGES TAB */}
-              {activeTab === "images" && (
-                <>
-                  <div style={{ marginBottom: isMobile ? "18px" : "25px" }}>
-                    <label style={styles.label}>Product Images (Max 10)</label>
-                    <input
-                      type="file"
-                      onChange={handleImageChange}
-                      multiple
-                      accept="image/*"
-                      style={{
-                        width: "100%",
-                        padding: isMobile ? "15px" : "20px",
-                        border: "2px dashed #ced4da",
-                        borderRadius: "8px",
-                        background: "#f8f9fa",
-                        cursor: "pointer",
-                        fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "15px",
-                        transition: "all 0.2s"
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = "#007bff";
-                        e.currentTarget.style.background = "#f0f8ff";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = "#ced4da";
-                        e.currentTarget.style.background = "#f8f9fa";
-                      }}
-                    />
-                    <small style={{ 
-                      color: "#666", 
-                      fontSize: isMobile ? "12px" : isLargeScreen ? "0.9rem" : "13px", 
-                      marginTop: "8px", 
-                      display: "block" 
-                    }}>
-                      Select multiple images. First image will be the main image by default.
-                    </small>
+                  
+                  {/* Specifications */}
+                  <div className="form-group">
+                    <label>Specifications</label>
+                    <div className="specs-list">
+                      {specFields.map((field, index) => (
+                        <div className="spec-row" key={index}>
+                          <input
+                            type="text"
+                            placeholder="Name"
+                            value={field.key}
+                            onChange={(e) => handleSpecFieldChange(index, 'key', e.target.value)}
+                            className="form-control spec-key"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Value"
+                            value={field.value}
+                            onChange={(e) => handleSpecFieldChange(index, 'value', e.target.value)}
+                            className="form-control spec-value"
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => removeSpecField(index)}
+                            className="remove-spec-btn"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={addSpecField}
+                      className="add-spec-btn"
+                    >
+                      + Add Specification
+                    </button>
                   </div>
                   
-                  {/* Image Previews */}
-                  {imagePreview.length > 0 && (
-                    <div>
-                      <label style={styles.label}>
-                        Preview (Click to set as main image)
-                      </label>
-                      <div style={styles.imagePreviewContainer}>
-                        {imagePreview.map((img, idx) => (
-                          <div 
-                            key={idx} 
-                            style={styles.imagePreview(idx === formData.mainImageIndex)}
-                            onClick={() => setMainImage(idx)}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = "translateY(-5px)";
-                              e.currentTarget.style.boxShadow = "0 5px 15px rgba(0,0,0,0.1)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = "translateY(0)";
-                              e.currentTarget.style.boxShadow = "none";
-                            }}
+                  {/* Features */}
+                  <div className="form-group">
+                    <label>Features</label>
+                    <div className="features-list">
+                      {featureFields.map((field, index) => (
+                        <div className="feature-row" key={index}>
+                          <input
+                            type="text"
+                            placeholder="Name"
+                            value={field.key}
+                            onChange={(e) => handleFeatureFieldChange(index, 'key', e.target.value)}
+                            className="form-control feature-key"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Description"
+                            value={field.value}
+                            onChange={(e) => handleFeatureFieldChange(index, 'value', e.target.value)}
+                            className="form-control feature-value"
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => removeFeatureField(index)}
+                            className="remove-feature-btn"
                           >
-                            <img 
-                              src={img.url} 
-                              alt={img.name}
-                              style={{ 
-                                width: "100%", 
-                                height: "100%", 
-                                objectFit: "cover" 
-                              }}
-                            />
-                            {idx === formData.mainImageIndex && (
-                              <div style={{
-                                position: "absolute",
-                                top: "8px",
-                                left: "8px",
-                                background: "#28a745",
-                                color: "white",
-                                padding: "4px 8px",
-                                borderRadius: "4px",
-                                fontSize: isMobile ? "10px" : "12px",
-                                fontWeight: "bold",
-                                boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                              }}>
-                                MAIN
-                              </div>
-                            )}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeImage(idx);
-                              }}
-                              style={{
-                                position: "absolute",
-                                top: "8px",
-                                right: "8px",
-                                background: "#dc3545",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "50%",
-                                width: isMobile ? "20px" : "24px",
-                                height: isMobile ? "20px" : "24px",
-                                cursor: "pointer",
-                                fontSize: isMobile ? "12px" : "14px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                                transition: "all 0.2s"
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = "scale(1.1)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = "scale(1)";
-                              }}
-                            >
-                              ×
-                            </button>
-                            <div style={{
-                              position: "absolute",
-                              bottom: "0",
-                              left: "0",
-                              right: "0",
-                              background: "rgba(0,0,0,0.7)",
-                              color: "white",
-                              padding: "6px",
-                              fontSize: isMobile ? "10px" : "11px",
-                              textAlign: "center",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap"
-                            }}>
-                              {img.name.length > 20 ? img.name.substring(0, 17) + "..." : img.name}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                            ×
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  )}
+                    <button 
+                      type="button" 
+                      onClick={addFeatureField}
+                      className="add-feature-btn"
+                    >
+                      + Add Feature
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {/* META DATA TAB */}
+              {activeTab === "meta" && (
+                <div className="form-section">
+                  <div className="form-group">
+                    <label>Meta Title (SEO)</label>
+                    <input
+                      type="text"
+                      value={formData.meta_title}
+                      onChange={(e) => setFormData({...formData, meta_title: e.target.value})}
+                      placeholder="Optimized title for search engines"
+                      className="form-control"
+                    />
+                    <small>Leave empty to use product name</small>
+                  </div>
                   
-                  {imagePreview.length === 0 && (
-                    <div style={{
-                      padding: isMobile ? "40px" : "60px",
-                      textAlign: "center",
-                      background: "#f8f9fa",
-                      borderRadius: "12px",
-                      color: "#666",
-                      border: "2px dashed #dee2e6"
-                    }}>
-                      <div style={{ 
-                        fontSize: isMobile ? "48px" : "64px", 
-                        marginBottom: "15px",
-                        opacity: 0.5
-                      }}>
-                        🖼️
-                      </div>
-                      <p style={{ 
-                        fontSize: isMobile ? "16px" : isLargeScreen ? "1.2rem" : "18px",
-                        marginBottom: "10px"
-                      }}>
-                        No images selected
-                      </p>
-                      <p style={{ 
-                        fontSize: isMobile ? "13px" : isLargeScreen ? "1rem" : "14px",
-                        opacity: 0.7
-                      }}>
-                        Click above to add product images
-                      </p>
+                  <div className="form-group">
+                    <label>Meta Description</label>
+                    <textarea
+                      value={formData.meta_description}
+                      onChange={(e) => setFormData({...formData, meta_description: e.target.value})}
+                      placeholder="Brief description for search engine results"
+                      rows="3"
+                      className="form-control"
+                    />
+                    <small>Recommended length: 150-160 characters</small>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Meta Keywords</label>
+                    <input
+                      type="text"
+                      value={formData.meta_keywords}
+                      onChange={(e) => setFormData({...formData, meta_keywords: e.target.value})}
+                      placeholder="e.g., calibration block, ultrasonic testing, ASME"
+                      className="form-control"
+                    />
+                    <small>Comma-separated keywords</small>
+                  </div>
+                </div>
+              )}
+              
+              {/* IMAGES TAB */}
+              {activeTab === "images" && (
+                <div className="form-section">
+                  <div className="form-group">
+                    <label>Product Images (Max 10)</label>
+                    <div className="file-upload">
+                      <input
+                        type="file"
+                        onChange={handleImageChange}
+                        multiple
+                        accept="image/*"
+                        id="productImages"
+                        className="file-input"
+                      />
+                      <label htmlFor="productImages" className="file-label">
+                        <i className="fas fa-cloud-upload-alt"></i> Choose Files
+                      </label>
+                      <span className="file-info">{formData.images.length} file(s) selected</span>
+                    </div>
+                    <small>First image will be the main product image by default.</small>
+                  </div>
+                  
+                  {/* Image Preview */}
+                  {imagePreview.length > 0 ? (
+                    <div className="image-preview-container">
+                      {imagePreview.map((img, idx) => (
+                        <div 
+                          key={idx} 
+                          className={`image-preview ${idx === formData.mainImageIndex ? 'main-image' : ''}`}
+                          onClick={() => setMainImage(idx)}
+                        >
+                          <img 
+                            src={img.url} 
+                            alt={img.name}
+                            className="preview-img"
+                          />
+                          {idx === formData.mainImageIndex && (
+                            <div className="main-badge">MAIN</div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeImage(idx);
+                            }}
+                            className="remove-image-btn"
+                          >
+                            ×
+                          </button>
+                          <div className="image-name">{img.name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="no-images">
+                      <i className="fas fa-images"></i>
+                      <p>No images selected</p>
+                      <span>Click above to add product images</span>
                     </div>
                   )}
-                </>
+                </div>
               )}
             </div>
             
-            {/* Form Summary & Submit */}
-            <div style={styles.summarySection}>
-              <h4 style={styles.summaryTitle}>
-                📋 Product Summary
-              </h4>
-              <div style={{ 
-                display: "grid", 
-                gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
-                gap: "15px",
-                fontSize: isMobile ? "13px" : isLargeScreen ? "1rem" : "14px" 
-              }}>
-                <div><strong>Name:</strong> {formData.name || "Not set"}</div>
-                <div><strong>Type:</strong> {formData.type.replace('_', ' ')}</div>
-                <div><strong>Category:</strong> {formData.category || "Not selected"}</div>
-                {/* <div><strong>Price:</strong> ₹{formData.price || "0.00"}</div> */}
-                <div><strong>Dimensions:</strong> {formData.dimensions || "Not set"}</div>
-                <div><strong>Materials:</strong> {formData.materials.length > 0 ? formData.materials.join(", ") : "None"}</div>
-                <div style={{ gridColumn: isMobile ? "auto" : "1 / -1" }}>
-                  <strong>Images:</strong> {formData.images.length} selected
-                </div>
-              </div>
-            </div>
-            
-            {/* Action Buttons */}
-            <div style={styles.formActions}>
+            <div className="form-actions">
               <button 
                 type="button"
                 onClick={resetForm}
-                style={styles.resetButton}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#5a6268";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "#6c757d";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }}
+                className="reset-button"
               >
-                🔄 Reset Form
+                <i className="fas fa-undo"></i> Reset Form
               </button>
               <button 
                 type="submit"
                 disabled={formLoading}
-                style={styles.submitButton(formLoading)}
-                onMouseEnter={(e) => {
-                  if (!formLoading) {
-                    e.currentTarget.style.background = "#218838";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!formLoading) {
-                    e.currentTarget.style.background = "#28a745";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }
-                }}
+                className="submit-button"
               >
                 {formLoading 
-                  ? "⏳ Adding Product..." 
-                  : "✅ Add Product"
+                  ? <><i className="fas fa-spinner fa-spin"></i> Adding Product...</> 
+                  : <><i className="fas fa-plus-circle"></i> Add Product</>
                 }
               </button>
             </div>
           </form>
         </div>
+        
+        {/* Products List */}
+{/* REPLACEMENT CODE FOR PRODUCTS LIST CONTAINER */}
+<div className="products-list-container">
+  <div className="products-header">
+    <h2><i className="fas fa-boxes"></i> Products ({filteredProductList.length})</h2>
+    
+    <div className="product-filters">
+      {/* NEW: Reorder Toggle Button */}
+      <button 
+        className={`filter-btn ${isReordering ? 'active-reorder' : ''}`}
+        onClick={() => {
+          if(searchTerm || filterType !== 'all') {
+            alert("Please clear search and filters to enable reordering.");
+            return;
+          }
+          setIsReordering(!isReordering);
+        }}
+        style={{
+          marginRight: '10px',
+          padding: '8px 15px',
+          background: isReordering ? '#ff9800' : '#e0e0e0',
+          color: isReordering ? 'white' : '#333',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontWeight: 'bold'
+        }}
+      >
+        <i className="fas fa-sort"></i> {isReordering ? "Done Sorting" : "Reorder Products"}
+      </button>
 
-        {/* Products List - ENLARGED */}
-        <div>
-          <div style={styles.productsHeader}>
-            <h3 style={styles.productsTitle}>
-              📦 Products ({products.length})
-            </h3>
-            <div style={styles.statsContainer}>
-              <span style={{ 
-                ...styles.statBadge,
-                background: "#e3f2fd",
-                color: "#1565c0"
-              }}>
-                CB: {products.filter(p => p.type === 'calibration_block').length}
-              </span>
-              <span style={{ 
-                ...styles.statBadge,
-                background: "#f3e5f5",
-                color: "#7b1fa2"
-              }}>
-                FS: {products.filter(p => p.type === 'flawed_specimen').length}
-              </span>
-              <span style={{ 
-                ...styles.statBadge,
-                background: "#e8f5e9",
-                color: "#2e7d32"
-              }}>
-                VB: {products.filter(p => p.type === 'validation_block').length}
-              </span>
+      <div className="search-container">
+        <input 
+          type="text"
+          placeholder="Search products..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          disabled={isReordering} // Disable search while reordering
+          className="search-input"
+        />
+        <i className="fas fa-search search-icon"></i>
+      </div>
+      <select 
+        value={filterType}
+        onChange={(e) => setFilterType(e.target.value)}
+        disabled={isReordering} // Disable filter while reordering
+        className="type-filter"
+      >
+        <option value="all">All Types</option>
+        <option value="calibration_block">Calibration Blocks</option>
+        <option value="flawed_specimen">Flawed Specimens</option>
+        <option value="validation_block">Validation Blocks</option>
+      </select>
+    </div>
+  </div>
+  
+  {loading ? (
+    <div className="loading-container">
+      <div className="spinner"></div>
+      <p>Loading products...</p>
+    </div>
+  ) : (
+    <div className="products-grid-wrapper" style={{position: 'relative', minHeight: '300px'}}>
+        {isRefreshing && (
+        <div className="refresh-overlay">
+            <div className="refresh-spinner"></div>
+        </div>
+      )}
+
+      {filteredProductList.length === 0 ? (
+        <div className="no-products">
+          <i className="fas fa-box-open"></i>
+          <p>No products found</p>
+        </div>
+      ) : (
+        /* DRAG AND DROP CONTEXT START */
+        <DragDropContext onDragEnd={handleOnDragEnd}>
+          <Droppable droppableId="products-grid" direction="horizontal">
+            {(provided) => (
+              <div 
+                className="products-grid"
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                style={{ 
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                  gap: '20px'
+                }}
+              >
+                {filteredProductList.map((product, index) => (
+                  <Draggable 
+                    key={product.id} 
+                    draggableId={String(product.id)} 
+                    index={index}
+                    isDragDisabled={!isReordering} // Only allow drag if button clicked
+                  >
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className="product-card"
+                        style={{
+                          ...provided.draggableProps.style,
+                          border: isReordering ? '2px dashed #2196f3' : snapshot.isDragging ? '2px solid #2196f3' : 'none',
+                          transform: snapshot.isDragging ? provided.draggableProps.style.transform : 'translate(0,0)',
+                          opacity: snapshot.isDragging ? 0.8 : 1
+                        }}
+                      >
+                         {/* VISUAL CUE FOR DRAGGING */}
+                         {isReordering && (
+                           <div style={{
+                             background: '#2196f3', color: 'white', 
+                             textAlign: 'center', padding: '5px', 
+                             borderTopLeftRadius: '8px', borderTopRightRadius: '8px',
+                             cursor: 'grab'
+                           }}>
+                             <i className="fas fa-arrows-alt"></i> Drag to Move
+                           </div>
+                         )}
+
+                        <div className="product-image">
+                          <img 
+                            src={getImageUrl(product.mainImage || product.image_url)} 
+                            alt={product.name}
+                            loading="lazy"
+                            onError={handleImageError}
+                          />
+                          <div className="product-type-badge" data-type={product.type}>
+                            {product.type.replace('_', ' ')}
+                          </div>
+                        </div>
+                        
+                        <div className="product-info">
+                          <h3 className="product-name">{product.name}</h3>
+                          <div className="product-category">{product.category}</div>
+                          <p className="product-description">
+                            {product.short_description || 
+                              (product.description?.length > 60
+                                ? product.description.substring(0, 60) + "..."
+                                : product.description)
+                            }
+                          </p>
+                          
+                          <div className="product-footer">
+                            <div className="product-price">
+                              {formatPrice(product.price)}
+                            </div>
+                            
+                            <div className="product-actions">
+                              <button 
+                                onClick={() => viewProduct(product.id)}
+                                className="view-button"
+                                disabled={isReordering} // Disable actions while dragging
+                              >
+                                <i className="fas fa-eye"></i>
+                              </button>
+                              <button 
+                                onClick={() => handleDelete(product.id)}
+                                className="delete-button"
+                                disabled={isReordering}
+                              >
+                                <i className="fas fa-trash-alt"></i>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+        /* DRAG AND DROP CONTEXT END */
+      )}
+    </div>
+  )}
+</div>
+      </div>
+
+      {/* Product Detail/Edit Modal */}
+      {showEditModal && editingProduct && (
+        <div className="modal-overlay" onClick={() => {
+          if (!isEditMode || window.confirm("You have unsaved changes. Are you sure you want to close?")) {
+            setShowEditModal(false);
+            setIsEditMode(false);
+          }
+        }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>
+                {isEditMode ? (
+                  <><i className="fas fa-edit"></i> Edit Product</>
+                ) : (
+                  <><i className="fas fa-box-open"></i> Product Details</>
+                )}
+              </h3>
+              <button 
+                className="close-button"
+                onClick={() => {
+                  if (!isEditMode || window.confirm("You have unsaved changes. Are you sure you want to close?")) {
+                    setShowEditModal(false);
+                    setIsEditMode(false);
+                  }
+                }}
+              >
+                <i className="fas fa-times"></i>
+              </button>
             </div>
-          </div>
-          
-          {loading ? (
-            <div style={{ 
-              textAlign: "center", 
-              padding: "80px", 
-              background: "white", 
-              borderRadius: "12px",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.1)"
-            }}>
-              <div style={{ 
-                fontSize: "64px", 
-                marginBottom: "20px",
-                animation: "spin 1s linear infinite"
-              }}>⏳</div>
-              <p style={{ 
-                fontSize: isMobile ? "16px" : isLargeScreen ? "1.2rem" : "18px",
-                color: "#666"
-              }}>
-                Loading products...
-              </p>
-            </div>
-          ) : products.length === 0 ? (
-            <div style={{ 
-              background: "white", 
-              padding: "80px", 
-              textAlign: "center", 
-              borderRadius: "12px",
-              border: "3px dashed #dee2e6",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.1)"
-            }}>
-              <div style={{ 
-                fontSize: "64px", 
-                marginBottom: "20px",
-                opacity: 0.5
-              }}>📦</div>
-              <p style={{ 
-                color: "#6c757d", 
-                fontSize: isMobile ? "16px" : isLargeScreen ? "1.2rem" : "18px",
-                marginBottom: "10px"
-              }}>
-                No products found
-              </p>
-              <p style={{ 
-                color: "#adb5bd", 
-                fontSize: isMobile ? "14px" : isLargeScreen ? "1rem" : "16px" 
-              }}>
-                Add your first product using the form on the left!
-              </p>
-            </div>
-          ) : (
-            <div style={styles.productsGrid}>
-              {products.map((p) => (
-                <div 
-                  key={p.id}
-                  style={styles.productCard}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-8px)";
-                    e.currentTarget.style.boxShadow = "0 12px 24px rgba(0,0,0,0.15)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
-                  }}
-                >
-                  {/* Product Image */}
-                  <div style={styles.productImageContainer}>
-                    {p.mainImage || p.image_url ? (
-                      <img 
-                        src={`${backendUrl}${p.mainImage || p.image_url}`}
-                        alt={p.name}
-                        style={{ 
-                          width: "100%", 
-                          height: "100%", 
-                          objectFit: "cover",
-                          transition: "transform 0.3s"
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "scale(1.05)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "scale(1)";
-                        }}
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                    ) : null}
-                    <div style={{ 
-                      display: p.mainImage || p.image_url ? 'none' : 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      color: '#adb5bd'
-                    }}>
-                      <span style={{ fontSize: "48px" }}>📷</span>
-                      <span style={{ fontSize: "14px", marginTop: "10px" }}>No image</span>
-                    </div>
-                    
-                    {/* Image count badge */}
-                    {p.images && p.images.length > 1 && (
-                      <div style={{
-                        position: "absolute",
-                        bottom: "12px",
-                        right: "12px",
-                        background: "rgba(0,0,0,0.8)",
-                        color: "white",
-                        padding: "6px 12px",
-                        borderRadius: "6px",
-                        fontSize: isMobile ? "12px" : "14px",
-                        fontWeight: "500",
-                        backdropFilter: "blur(4px)"
-                      }}>
-                        📷 {p.images.length} images
+            
+            {isEditMode && (
+              <div className="edit-mode-notice">
+                <i className="fas fa-edit"></i> You are editing this product
+              </div>
+            )}
+            
+            <div className="modal-body">
+              {isEditMode ? (
+                /* EDIT MODE */
+                <form onSubmit={handleEditSubmit}>
+                  {/* Tab Navigation for Edit Mode */}
+                  <div className="form-tabs">
+                    <button 
+                      type="button"
+                      className={editActiveTab === "basic" ? "tab-active" : ""}
+                      onClick={() => setEditActiveTab("basic")}
+                    >
+                      <i className="fas fa-info-circle"></i> Basic Info
+                    </button>
+                    <button 
+                      type="button"
+                      className={editActiveTab === "technical" ? "tab-active" : ""}
+                      onClick={() => setEditActiveTab("technical")}
+                    >
+                      <i className="fas fa-cogs"></i> Technical
+                    </button>
+                    <button 
+                      type="button"
+                      className={editActiveTab === "meta" ? "tab-active" : ""}
+                      onClick={() => setEditActiveTab("meta")}
+                    >
+                      <i className="fas fa-tags"></i> Meta Data
+                    </button>
+                    <button 
+                      type="button"
+                      className={editActiveTab === "images" ? "tab-active" : ""}
+                      onClick={() => setEditActiveTab("images")}
+                    >
+                      <i className="fas fa-images"></i> Images ({editFormData.existingImages.length - editFormData.deleteImages.length + editFormData.newImages.length})
+                    </button>
+                  </div>
+                  
+                  <div className="tab-content">
+                    {/* BASIC INFO TAB */}
+                    {editActiveTab === "basic" && (
+                      <div className="form-section">
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label>Product Name *</label>
+                            <input
+                              type="text"
+                              value={editFormData.name}
+                              onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
+                              required
+                              placeholder="e.g., ASME V Calibration Block"
+                              className="form-control"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>SKU</label>
+                            <input
+                              type="text"
+                              value={editFormData.sku}
+                              onChange={(e) => setEditFormData({...editFormData, sku: e.target.value})}
+                              placeholder="e.g., CB-ASME-001"
+                              className="form-control"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label>Product Type *</label>
+                            <select
+                              value={editFormData.type}
+                              onChange={handleEditTypeChange}
+                              className="form-control"
+                            >
+                              <option value="calibration_block">Calibration Block</option>
+                              <option value="flawed_specimen">Flawed Specimen</option>
+                              <option value="validation_block">Validation Block</option>
+                            </select>
+                          </div>
+                          
+                          <div className="form-group">
+                            <label>Category *</label>
+                            <select
+                              value={editFormData.category}
+                              onChange={(e) => setEditFormData({...editFormData, category: e.target.value})}
+                              required
+                              className="form-control"
+                            >
+                              <option value="">Select category</option>
+                              {getCategoriesForType(editFormData.type).map((cat, index) => (
+                                <option key={index} value={cat}>{cat}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label>Subcategory</label>
+                            <input
+                              type="text"
+                              value={editFormData.subcategory}
+                              onChange={(e) => setEditFormData({...editFormData, subcategory: e.target.value})}
+                              placeholder="e.g., ASME V Standards"
+                              className="form-control"
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label>Featured Product</label>
+                            <div className="toggle-container">
+                              <label className="toggle">
+                                <input
+                                  type="checkbox"
+                                  checked={editFormData.is_featured}
+                                  onChange={(e) => setEditFormData({...editFormData, is_featured: e.target.checked})}
+                                />
+                                <span className="toggle-slider"></span>
+                              </label>
+                              <span className="toggle-label">
+                                {editFormData.is_featured ? "Yes" : "No"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Short Description</label>
+                          <input
+                            type="text"
+                            value={editFormData.short_description}
+                            onChange={(e) => setEditFormData({...editFormData, short_description: e.target.value})}
+                            placeholder="Brief description (shown in product lists)"
+                            className="form-control"
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Full Description *</label>
+                          <textarea
+                            value={editFormData.description}
+                            onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                            placeholder="Detailed product description..."
+                            rows="5"
+                            className="form-control"
+                          />
+                        </div>
+                        
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label>Price (₹)</label>
+                            <input
+                              type="number"
+                              value={editFormData.price}
+                              onChange={(e) => setEditFormData({...editFormData, price: e.target.value})}
+                              placeholder="0.00"
+                              min="0"
+                              step="0.01"
+                              className="form-control"
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label>Compare At Price (₹)</label>
+                            <input
+                              type="number"
+                              value={editFormData.compare_price}
+                              onChange={(e) => setEditFormData({...editFormData, compare_price: e.target.value})}
+                              placeholder="0.00"
+                              min="0"
+                              step="0.01"
+                              className="form-control"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label>Cost Price (₹)</label>
+                            <input
+                              type="number"
+                              value={editFormData.cost_price}
+                              onChange={(e) => setEditFormData({...editFormData, cost_price: e.target.value})}
+                              placeholder="0.00"
+                              min="0"
+                              step="0.01"
+                              className="form-control"
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label>Stock Quantity</label>
+                            <input
+                              type="number"
+                              value={editFormData.stock_quantity}
+                              onChange={(e) => setEditFormData({...editFormData, stock_quantity: e.target.value})}
+                              placeholder="0"
+                              min="0"
+                              step="1"
+                              className="form-control"
+                            />
+                          </div>
+                        </div>
                       </div>
                     )}
                     
-                    {/* Type Badge */}
-                    <div style={{
-                      position: "absolute",
-                      top: "12px",
-                      left: "12px",
-                      padding: "6px 12px",
-                      background: 
-                        p.type === 'calibration_block' ? '#1565c0' : 
-                        p.type === 'flawed_specimen' ? '#7b1fa2' : '#2e7d32',
-                      color: 'white',
-                      borderRadius: "6px",
-                      fontSize: isMobile ? "12px" : "14px",
-                      fontWeight: "600",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.5px",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                    }}>
-                      {p.type.replace('_', ' ')}
+                    {/* TECHNICAL TAB */}
+                    {editActiveTab === "technical" && (
+                      <div className="form-section">
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label>Dimensions</label>
+                            <input
+                              type="text"
+                              value={editFormData.dimensions}
+                              onChange={(e) => setEditFormData({...editFormData, dimensions: e.target.value})}
+                              placeholder="e.g., 100mm x 50mm x 25mm"
+                              className="form-control"
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label>Weight</label>
+                            <input
+                              type="text"
+                              value={editFormData.weight}
+                              onChange={(e) => setEditFormData({...editFormData, weight: e.target.value})}
+                              placeholder="e.g., 1.5kg"
+                              className="form-control"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Tolerance</label>
+                          <input
+                            type="text"
+                            value={editFormData.tolerance}
+                            onChange={(e) => setEditFormData({...editFormData, tolerance: e.target.value})}
+                            placeholder="e.g., ±0.02mm or ±0.001 inch"
+                            className="form-control"
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Standards</label>
+                          <input
+                            type="text"
+                            value={editFormData.standards}
+                            onChange={(e) => setEditFormData({...editFormData, standards: e.target.value})}
+                            placeholder="e.g., ASME V, EN 12668"
+                            className="form-control"
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Flaws/Defects</label>
+                          <textarea
+                            value={editFormData.flaws}
+                            onChange={(e) => setEditFormData({...editFormData, flaws: e.target.value})}
+                            placeholder="e.g., Side drilled holes: 1.5mm, 3mm, 6mm diameter..."
+                            rows="3"
+                            className="form-control"
+                          />
+                        </div>
+                        
+                        {/* Materials Selection */}
+                        <div className="form-group">
+                          <label>Materials</label>
+                          
+                          {/* Selected Materials */}
+                          {editFormData.materials.length > 0 && (
+                            <div className="selected-materials">
+                              <div className="selected-materials-header">
+                                Selected Materials ({editFormData.materials.length}):
+                              </div>
+                              <div className="selected-materials-list">
+                                {editFormData.materials.map((material, idx) => (
+                                  <div key={idx} className="material-tag selected">
+                                    {material}
+                                    <button
+                                      type="button"
+                                      onClick={() => removeMaterialEdit(material)}
+                                      className="remove-material"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Material Selection */}
+                          <div className="materials-selection">
+                            {commonMaterials.map((material, idx) => (
+                              <div
+                                key={idx}
+                                onClick={() => handleEditMaterialToggle(material)}
+                                className={`material-tag ${editFormData.materials.includes(material) ? 'active' : ''}`}
+                              >
+                                {material}
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {/* Custom Material */}
+                          <div className="custom-material-input">
+                            <input
+                              type="text"
+                              value={editFormData.customMaterial}
+                              onChange={(e) => setEditFormData({...editFormData, customMaterial: e.target.value})}
+                              placeholder="Add custom material..."
+                              className="form-control"
+                              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomMaterialEdit())}
+                            />
+                            <button
+                              type="button"
+                              onClick={addCustomMaterialEdit}
+                              className="add-material-btn"
+                            >
+                              Add Material
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {/* Specifications */}
+                        <div className="form-group">
+                          <label>Specifications</label>
+                          <div className="specs-list">
+                            {editSpecFields.map((field, index) => (
+                              <div className="spec-row" key={index}>
+                                <input
+                                  type="text"
+                                  placeholder="Name"
+                                  value={field.key}
+                                  onChange={(e) => handleEditSpecFieldChange(index, 'key', e.target.value)}
+                                  className="form-control spec-key"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Value"
+                                  value={field.value}
+                                  onChange={(e) => handleEditSpecFieldChange(index, 'value', e.target.value)}
+                                  className="form-control spec-value"
+                                />
+                                <button 
+                                  type="button" 
+                                  onClick={() => removeEditSpecField(index)}
+                                  className="remove-spec-btn"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={addEditSpecField}
+                            className="add-spec-btn"
+                          >
+                            + Add Specification
+                          </button>
+                        </div>
+                        
+                        {/* Features */}
+                        <div className="form-group">
+                          <label>Features</label>
+                          <div className="features-list">
+                            {editFeatureFields.map((field, index) => (
+                              <div className="feature-row" key={index}>
+                                <input
+                                  type="text"
+                                  placeholder="Name"
+                                  value={field.key}
+                                  onChange={(e) => handleEditFeatureFieldChange(index, 'key', e.target.value)}
+                                  className="form-control feature-key"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Description"
+                                  value={field.value}
+                                  onChange={(e) => handleEditFeatureFieldChange(index, 'value', e.target.value)}
+                                  className="form-control feature-value"
+                                />
+                                <button 
+                                  type="button" 
+                                  onClick={() => removeEditFeatureField(index)}
+                                  className="remove-feature-btn"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={addEditFeatureField}
+                            className="add-feature-btn"
+                          >
+                            + Add Feature
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* META DATA TAB */}
+                    {editActiveTab === "meta" && (
+                      <div className="form-section">
+                        <div className="form-group">
+                          <label>Meta Title (SEO)</label>
+                          <input
+                            type="text"
+                            value={editFormData.meta_title}
+                            onChange={(e) => setEditFormData({...editFormData, meta_title: e.target.value})}
+                            placeholder="Optimized title for search engines"
+                            className="form-control"
+                          />
+                          <small>Leave empty to use product name</small>
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Meta Description</label>
+                          <textarea
+                            value={editFormData.meta_description}
+                            onChange={(e) => setEditFormData({...editFormData, meta_description: e.target.value})}
+                            placeholder="Brief description for search engine results"
+                            rows="3"
+                            className="form-control"
+                          />
+                          <small>Recommended length: 150-160 characters</small>
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Meta Keywords</label>
+                          <input
+                            type="text"
+                            value={editFormData.meta_keywords}
+                            onChange={(e) => setEditFormData({...editFormData, meta_keywords: e.target.value})}
+                            placeholder="e.g., calibration block, ultrasonic testing, ASME"
+                            className="form-control"
+                          />
+                          <small>Comma-separated keywords</small>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* IMAGES TAB */}
+                    {editActiveTab === "images" && (
+                      <div className="form-section">
+                        <div className="form-group">
+                          <label>
+                            Product Images 
+                            (Current: {editFormData.existingImages.length - editFormData.deleteImages.length}, 
+                            New: {editFormData.newImages.length}, 
+                            Max: 10)
+                          </label>
+                          <div className="file-upload">
+                            <input
+                              type="file"
+                              onChange={handleEditImageChange}
+                              multiple
+                              accept="image/*"
+                              id="editProductImages"
+                              className="file-input"
+                            />
+                            <label htmlFor="editProductImages" className="file-label">
+                              <i className="fas fa-cloud-upload-alt"></i> Add More Images
+                            </label>
+                            <span className="file-info">
+                              {editFormData.newImages.length} new file(s) selected
+                            </span>
+                          </div>
+                          <small>Click on an image to set it as the main product image.</small>
+                        </div>
+                        
+                        {/* Existing Images Preview */}
+                        {editFormData.existingImages.length - editFormData.deleteImages.length > 0 && (
+                          <div className="image-section">
+                            <h4>Current Images</h4>
+                            <div className="image-preview-container">
+                              {editFormData.existingImages
+                                .filter(img => !editFormData.deleteImages.includes(img.id))
+                                .map((img) => (
+                                <div 
+                                  key={img.id} 
+                                  className={`image-preview ${img.id === editFormData.mainImageId ? 'main-image' : ''}`}
+                                  onClick={() => setMainImageEdit(img.id)}
+                                >
+                                  <img 
+                                    src={getImageUrl(img.url)} 
+                                    alt="Product"
+                                    className="preview-img"
+                                  />
+                                  {img.id === editFormData.mainImageId && (
+                                    <div className="main-badge">MAIN</div>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeExistingImage(img.id);
+                                    }}
+                                    className="remove-image-btn"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* New Images Preview */}
+                        {editFormData.newImages.length > 0 && (
+                          <div className="image-section">
+                            <h4>New Images</h4>
+                            <div className="image-preview-container">
+                              {editImagePreview.new.map((img, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className={`image-preview ${editFormData.mainImageId === null && editFormData.mainImageIndex === idx ? 'main-image' : ''}`}
+                                  onClick={() => setMainImageEdit(null, true, idx)}
+                                >
+                                  <img 
+                                    src={img.url} 
+                                    alt={img.name}
+                                    className="preview-img"
+                                  />
+                                  {editFormData.mainImageId === null && editFormData.mainImageIndex === idx && (
+                                    <div className="main-badge">MAIN</div>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeNewImage(idx);
+                                    }}
+                                    className="remove-image-btn"
+                                  >
+                                    ×
+                                  </button>
+                                  <div className="image-name">{img.name}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {editFormData.existingImages.length - editFormData.deleteImages.length === 0 && editFormData.newImages.length === 0 && (
+                          <div className="no-images">
+                            <i className="fas fa-images"></i>
+                            <p>No images available</p>
+                            <span>Upload at least one image for your product</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Edit Mode Footer */}
+                  <div className="form-actions modal-actions">
+                    <button
+                      type="button"
+                      onClick={cancelEditMode}
+                      className="cancel-button"
+                    >
+                      <i className="fas fa-times"></i> Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={editLoading}
+                      className="save-button"
+                    >
+                      {editLoading 
+                        ? <><i className="fas fa-spinner fa-spin"></i> Saving...</> 
+                        : <><i className="fas fa-save"></i> Save Changes</>
+                      }
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                /* VIEW MODE */
+                <>
+                  {/* Product Gallery */}
+                  <div className="product-gallery">
+                    <div className="main-product-image">
+                      {editingProduct.images && editingProduct.images.length > 0 ? (
+                        <>
+                          <img 
+                            src={getImageUrl(editingProduct.images[currentModalImage].url)} 
+                            alt={editingProduct.name}
+                            onError={handleImageError}
+                          />
+                          
+                          {/* Image navigation controls */}
+                          {editingProduct.images.length > 1 && (
+                            <div className="modal-image-controls">
+                              <button 
+                                className="modal-image-nav prev" 
+                                onClick={prevModalImage}
+                                aria-label="Previous image"
+                              >
+                                <i className="fas fa-chevron-left"></i>
+                              </button>
+                              <span className="image-count">
+                                {currentModalImage + 1} / {editingProduct.images.length}
+                              </span>
+                              <button 
+                                className="modal-image-nav next" 
+                                onClick={nextModalImage}
+                                aria-label="Next image"
+                              >
+                                <i className="fas fa-chevron-right"></i>
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="no-image">No image available</div>
+                      )}
                     </div>
+                    
+                    {/* Thumbnails */}
+                    {editingProduct.images && editingProduct.images.length > 1 && (
+                      <div className="product-thumbnails">
+                        {editingProduct.images.map((img, idx) => (
+                          <div 
+                            key={idx}
+                            className={`thumbnail ${idx === currentModalImage ? 'active-thumbnail' : ''}`}
+                            onClick={() => setCurrentModalImage(idx)}
+                          >
+                            <img 
+                              src={getImageUrl(img.url)} 
+                              alt={`${editingProduct.name} ${idx + 1}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   
                   {/* Product Info */}
-                  <div style={styles.productInfo}>
-                    <h4 style={styles.productName}>
-                      {p.name}
-                    </h4>
-                    
-                    <div style={styles.productCategory}>
-                      {p.category}
+                  <div className="product-details">
+                    <div className="product-meta-header">
+                      <div className="product-badges">
+                        <span className="product-type" data-type={editingProduct.type}>
+                          {editingProduct.type.replace('_', ' ')}
+                        </span>
+                        {editingProduct.is_featured && (
+                          <span className="featured-tag">
+                            <i className="fas fa-star"></i> Featured
+                          </span>
+                        )}
+                      </div>
+                      <div className="product-sku">
+                        SKU: {editingProduct.sku}
+                      </div>
                     </div>
                     
-                    <p style={styles.productDescription}>
-                      {p.description.length > 120 
-                        ? p.description.substring(0, 120) + "..." 
-                        : p.description}
-                    </p>
+                    <h1 className="product-title">{editingProduct.name}</h1>
                     
-                    {/* Technical Info */}
-                    {(p.dimensions || p.materials?.length > 0 || p.tolerance) && (
-                      <div style={{ 
-                        fontSize: isMobile ? "12px" : isLargeScreen ? "0.95rem" : "14px", 
-                        color: "#666",
-                        marginBottom: "20px",
-                        padding: "15px",
-                        background: "#f8f9fa",
-                        borderRadius: "8px",
-                        border: "1px solid #e9ecef"
-                      }}>
-                        {p.dimensions && (
-                          <div style={{ marginBottom: "8px" }}>
-                            <span style={{ fontWeight: "500", marginRight: "8px" }}>📐 Dimensions:</span>
-                            {p.dimensions}
+                    <div className="product-categories">
+                      <span className="category">{editingProduct.category}</span>
+                      {editingProduct.subcategory && (
+                        <span className="subcategory">{editingProduct.subcategory}</span>
+                      )}
+                    </div>
+                    
+                    <div className="product-pricing">
+                      <div className="current-price">{formatPrice(editingProduct.price)}</div>
+                      {editingProduct.compare_price && (
+                        <div className="compare-price">{formatPrice(editingProduct.compare_price)}</div>
+                      )}
+                    </div>
+                    
+                    <div className="product-stock">
+                      Stock: <span>{editingProduct.stock_quantity || '0'} units</span>
+                    </div>
+                    
+                    <div className="product-description">
+                      <h3>Description</h3>
+                      <p>{editingProduct.description}</p>
+                    </div>
+                    
+                    {/* Technical Details Section */}
+                    <div className="product-technical">
+                      <h3>Technical Details</h3>
+                      <div className="technical-grid">
+                        {editingProduct.dimensions && (
+                          <div className="technical-item">
+                            <strong>Dimensions</strong>
+                            <span>{editingProduct.dimensions}</span>
                           </div>
                         )}
-                        {p.materials && p.materials.length > 0 && (
-                          <div style={{ marginBottom: "8px" }}>
-                            <span style={{ fontWeight: "500", marginRight: "8px" }}>🔧 Materials:</span>
-                            {Array.isArray(p.materials) ? p.materials.slice(0, 2).join(", ") : p.materials}
-                            {Array.isArray(p.materials) && p.materials.length > 2 && 
-                              <span style={{ color: "#6c757d", marginLeft: "5px" }}>
-                                +{p.materials.length - 2} more
-                              </span>
-                            }
+                        
+                        {editingProduct.tolerance && (
+                          <div className="technical-item">
+                            <strong>Tolerance</strong>
+                            <span>{editingProduct.tolerance}</span>
                           </div>
                         )}
-                        {p.tolerance && (
-                          <div>
-                            <span style={{ fontWeight: "500", marginRight: "8px" }}>📏 Tolerance:</span>
-                            {p.tolerance}
+                        
+                        {editingProduct.weight && (
+                          <div className="technical-item">
+                            <strong>Weight</strong>
+                            <span>{editingProduct.weight}</span>
                           </div>
                         )}
+                        
+                        {editingProduct.standards && (
+                          <div className="technical-item">
+                            <strong>Standards</strong>
+                            <span>{editingProduct.standards}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Materials */}
+                    {editingProduct.materials && editingProduct.materials.length > 0 && (
+                      <div className="product-materials">
+                        <h3>Materials</h3>
+                        <div className="materials-list">
+                          {editingProduct.materials.map((material, idx) => (
+                            <span key={idx} className="material-tag">{material}</span>
+                          ))}
+                        </div>
                       </div>
                     )}
                     
-                    <div style={{ 
-                      display: "flex", 
-                      justifyContent: "space-between", 
-                      alignItems: "center",
-                      paddingTop: "20px",
-                      borderTop: "1px solid #e9ecef"
-                    }}>
-                      {/* <span style={styles.productPrice}>
-                        ₹{parseFloat(p.price || 0).toFixed(2)}
-                      </span> */}
-                      <div style={styles.productActions}>
-                        <button 
-                          onClick={() => viewProduct(p.id)}
-                          style={styles.viewButton}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "#0056b3";
-                            e.currentTarget.style.transform = "translateY(-2px)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "#007bff";
-                            e.currentTarget.style.transform = "translateY(0)";
-                          }}
-                        >
-                          👁️ View Details
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(p.id)}
-                          style={styles.deleteButton}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "#c82333";
-                            e.currentTarget.style.transform = "translateY(-2px)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "#dc3545";
-                            e.currentTarget.style.transform = "translateY(0)";
-                          }}
-                        >
-                          🗑️ Delete
-                        </button>
+                    {/* Flaws */}
+                    {editingProduct.flaws && (
+                      <div className="product-flaws">
+                        <h3>Flaws/Defects</h3>
+                        <p>{editingProduct.flaws}</p>
+                      </div>
+                    )}
+                    
+                    {/* Specifications */}
+                    {editingProduct.specifications && Object.keys(editingProduct.specifications).length > 0 && (
+                      <div className="product-specifications">
+                        <h3>Specifications</h3>
+                        <div className="specifications-list">
+                          {Object.entries(editingProduct.specifications).map(([key, value], idx) => (
+                            <div key={idx} className="specification-item">
+                              <div className="spec-key">{key}</div>
+                              <div className="spec-value">{value}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Features */}
+                    {editingProduct.features && Object.keys(editingProduct.features).length > 0 && (
+                      <div className="product-features">
+                        <h3>Features</h3>
+                        <div className="features-list">
+                          {Object.entries(editingProduct.features).map(([key, value], idx) => (
+                            <div key={idx} className="feature-item">
+                              <div className="feature-key">{key}</div>
+                              <div className="feature-value">{value}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Meta Data */}
+                    <div className="meta-data-section">
+                      <h3>SEO & Meta Data</h3>
+                      <div className="meta-data-grid">
+                        <div className="meta-item">
+                          <strong>Meta Title</strong>
+                          <span>{editingProduct.meta_title || editingProduct.name}</span>
+                        </div>
+                        <div className="meta-item">
+                          <strong>Meta Description</strong>
+                          <span>{editingProduct.meta_description || 'Not set'}</span>
+                        </div>
+                        <div className="meta-item">
+                          <strong>Meta Keywords</strong>
+                          <span>{editingProduct.meta_keywords || 'Not set'}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Product Detail Modal - ENLARGED */}
-      {showEditModal && editingProduct && (
-        <div style={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            {/* Modal Header */}
-            <div style={styles.modalHeader}>
-              <h3 style={styles.modalTitle}>📦 Product Details</h3>
-              <button
-                onClick={() => setShowEditModal(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "28px",
-                  cursor: "pointer",
-                  color: "#666",
-                  width: "40px",
-                  height: "40px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "50%",
-                  transition: "all 0.2s"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#f8f9fa";
-                  e.currentTarget.style.color = "#333";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "none";
-                  e.currentTarget.style.color = "#666";
-                }}
-              >
-                ×
-              </button>
-            </div>
-            
-            {/* Modal Content */}
-            <div style={styles.modalBody}>
-              {/* Image Gallery */}
-              {editingProduct.images && editingProduct.images.length > 0 ? (
-                <div style={{ marginBottom: "30px" }}>
-                  <div style={{
-                    height: isMobile ? "250px" : isLargeScreen ? "400px" : "350px",
-                    background: "#f8f9fa",
-                    borderRadius: "12px",
-                    overflow: "hidden",
-                    marginBottom: "15px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                  }}>
-                    <img 
-                      src={`${backendUrl}${editingProduct.mainImage || editingProduct.images[0]?.url}`}
-                      alt={editingProduct.name}
-                      style={{ 
-                        maxWidth: "100%", 
-                        maxHeight: "100%", 
-                        objectFit: "contain" 
-                      }}
-                    />
-                  </div>
-                  {editingProduct.images.length > 1 && (
-                    <div style={{ 
-                      display: "flex", 
-                      gap: "12px", 
-                      overflowX: "auto", 
-                      paddingBottom: "10px",
-                      padding: "10px 0"
-                    }}>
-                      {editingProduct.images.map((img, idx) => (
-                        <img 
-                          key={idx}
-                          src={`${backendUrl}${img.url}`}
-                          alt={`${editingProduct.name} ${idx + 1}`}
-                          style={{
-                            width: isMobile ? "80px" : "100px",
-                            height: isMobile ? "80px" : "100px",
-                            objectFit: "cover",
-                            borderRadius: "8px",
-                            border: img.isMain ? "3px solid #28a745" : "1px solid #dee2e6",
-                            cursor: "pointer",
-                            transition: "all 0.2s"
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = "translateY(-3px)";
-                            e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = "translateY(0)";
-                            e.currentTarget.style.boxShadow = "none";
-                          }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div style={{
-                  height: isMobile ? "200px" : isLargeScreen ? "300px" : "250px",
-                  background: "#f8f9fa",
-                  borderRadius: "12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: "30px"
-                }}>
-                  <span style={{ 
-                    fontSize: isMobile ? "64px" : "96px", 
-                    color: "#adb5bd",
-                    opacity: 0.5
-                  }}>
-                    📷
-                  </span>
-                </div>
+                </>
               )}
-              
-              {/* Product Info */}
-              <h2 style={{ 
-                margin: "0 0 15px 0",
-                fontSize: isMobile ? "1.4rem" : isLargeScreen ? "1.8rem" : "1.6rem",
-                color: "#333",
-                fontWeight: "600"
-              }}>
-                {editingProduct.name}
-              </h2>
-              
-              <div style={{ 
-                display: "flex", 
-                flexWrap: "wrap",
-                gap: "10px", 
-                marginBottom: "20px" 
-              }}>
-                <span style={{
-                  padding: "8px 16px",
-                  background: "#e7f5ff",
-                  color: "#0066cc",
-                  borderRadius: "20px",
-                  fontSize: isMobile ? "13px" : "15px",
-                  fontWeight: "500"
-                }}>
-                  {editingProduct.category}
-                </span>
-                <span style={{
-                  padding: "8px 16px",
-                  background: 
-                    editingProduct.type === 'calibration_block' ? '#e3f2fd' : 
-                    editingProduct.type === 'flawed_specimen' ? '#f3e5f5' : '#e8f5e8',
-                  color: 
-                    editingProduct.type === 'calibration_block' ? '#1565c0' : 
-                    editingProduct.type === 'flawed_specimen' ? '#7b1fa2' : '#2e7d32',
-                  borderRadius: "20px",
-                  fontSize: isMobile ? "13px" : "15px",
-                  fontWeight: "500"
-                }}>
-                  {editingProduct.type.replace('_', ' ')}
-                </span>
-              </div>
-              
-              <p style={{ 
-                color: "#666", 
-                lineHeight: "1.6",
-                fontSize: isMobile ? "15px" : isLargeScreen ? "1.1rem" : "17px",
-                marginBottom: "30px"
-              }}>
-                {editingProduct.description}
-              </p>
-              
-              <div style={{ 
-                fontSize: isMobile ? "28px" : isLargeScreen ? "2rem" : "32px", 
-                fontWeight: "bold", 
-                color: "#28a745",
-                margin: "30px 0",
-                padding: "20px",
-                background: "#f8f9fa",
-                borderRadius: "12px",
-                textAlign: "center"
-              }}>
-                {/* ₹{parseFloat(editingProduct.price || 0).toFixed(2)} */}
-              </div>
-              
-              {/* Technical Details */}
-              <div style={{
-                background: "#f8f9fa",
-                padding: isMobile ? "20px" : "30px",
-                borderRadius: "12px",
-                border: "1px solid #e9ecef"
-              }}>
-                <h4 style={{ 
-                  margin: "0 0 20px 0",
-                  fontSize: isMobile ? "1.1rem" : isLargeScreen ? "1.3rem" : "1.2rem",
-                  fontWeight: "600",
-                  color: "#333"
-                }}>
-                  🔧 Technical Specifications
-                </h4>
-                <div style={{ 
-                  display: "grid", 
-                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
-                  gap: isMobile ? "20px" : "30px" 
-                }}>
-                  {editingProduct.dimensions && (
-                    <div style={{
-                      background: "white",
-                      padding: "20px",
-                      borderRadius: "8px",
-                      border: "1px solid #dee2e6"
-                    }}>
-                      <strong style={{ 
-                        fontSize: isMobile ? "14px" : "16px",
-                        color: "#495057",
-                        display: "block",
-                        marginBottom: "10px"
-                      }}>
-                        📐 Dimensions
-                      </strong>
-                      <span style={{ 
-                        color: "#666", 
-                        fontSize: isMobile ? "14px" : "16px" 
-                      }}>
-                        {editingProduct.dimensions}
-                      </span>
-                    </div>
-                  )}
-                  {editingProduct.tolerance && (
-                    <div style={{
-                      background: "white",
-                      padding: "20px",
-                      borderRadius: "8px",
-                      border: "1px solid #dee2e6"
-                    }}>
-                      <strong style={{ 
-                        fontSize: isMobile ? "14px" : "16px",
-                        color: "#495057",
-                        display: "block",
-                        marginBottom: "10px"
-                      }}>
-                        📏 Tolerance
-                      </strong>
-                      <span style={{ 
-                        color: "#666", 
-                        fontSize: isMobile ? "14px" : "16px" 
-                      }}>
-                        {editingProduct.tolerance}
-                      </span>
-                    </div>
-                  )}
-                  {editingProduct.materials && editingProduct.materials.length > 0 && (
-                    <div style={{ 
-                      gridColumn: isMobile ? "auto" : "1 / -1",
-                      background: "white",
-                      padding: "20px",
-                      borderRadius: "8px",
-                      border: "1px solid #dee2e6"
-                    }}>
-                      <strong style={{ 
-                        fontSize: isMobile ? "14px" : "16px",
-                        color: "#495057",
-                        display: "block",
-                        marginBottom: "15px"
-                      }}>
-                        🔧 Materials
-                      </strong>
-                      <div style={{ marginTop: "5px" }}>
-                        {(Array.isArray(editingProduct.materials) ? editingProduct.materials : [editingProduct.materials]).map((mat, idx) => (
-                          <span key={idx} style={{
-                            display: "inline-block",
-                            padding: "8px 16px",
-                            background: "#e8f5e9",
-                            color: "#2e7d32",
-                            borderRadius: "20px",
-                            fontSize: isMobile ? "13px" : "15px",
-                            margin: "5px",
-                            fontWeight: "500"
-                          }}>
-                            {mat}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {editingProduct.flaws && (
-                    <div style={{ 
-                      gridColumn: isMobile ? "auto" : "1 / -1",
-                      background: "white",
-                      padding: "20px",
-                      borderRadius: "8px",
-                      border: "1px solid #dee2e6"
-                    }}>
-                      <strong style={{ 
-                        fontSize: isMobile ? "14px" : "16px",
-                        color: "#495057",
-                        display: "block",
-                        marginBottom: "10px"
-                      }}>
-                        ⚠️ Flaws/Defects
-                      </strong>
-                      <span style={{ 
-                        color: "#666", 
-                        whiteSpace: "pre-line",
-                        fontSize: isMobile ? "14px" : "16px",
-                        lineHeight: "1.5"
-                      }}>
-                        {editingProduct.flaws}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
             
             {/* Modal Footer */}
-            <div style={styles.modalFooter}>
-              <button
-                onClick={() => setShowEditModal(false)}
-                style={styles.modalButton}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#5a6268";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "#6c757d";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }}
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  if (window.confirm("Are you sure you want to delete this product?")) {
-                    handleDelete(editingProduct.id);
-                    setShowEditModal(false);
-                  }
-                }}
-                style={styles.modalDeleteButton}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#c82333";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "#dc3545";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }}
-              >
-                🗑️ Delete Product
-              </button>
+            <div className="modal-footer">
+              {isEditMode ? (
+                <div className="footer-actions">
+                  <button
+                    onClick={cancelEditMode}
+                    className="cancel-button"
+                  >
+                    <i className="fas fa-times"></i> Cancel
+                  </button>
+                  <button
+                    onClick={handleEditSubmit}
+                    disabled={editLoading}
+                    className="save-button"
+                  >
+                    {editLoading 
+                      ? <><i className="fas fa-spinner fa-spin"></i> Saving...</> 
+                      : <><i className="fas fa-save"></i> Save Changes</>
+                    }
+                  </button>
+                </div>
+              ) : (
+                <div className="footer-actions">
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="close-modal-button"
+                  >
+                    <i className="fas fa-times"></i> Close
+                  </button>
+                  <div>
+                    <button
+                      onClick={enterEditMode}
+                      className="edit-button"
+                    >
+                      <i className="fas fa-edit"></i> Edit Product
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
+                          handleDelete(editingProduct.id);
+                        }
+                      }}
+                      className="delete-button"
+                    >
+                      <i className="fas fa-trash-alt"></i> Delete
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

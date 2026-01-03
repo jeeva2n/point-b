@@ -1,3 +1,4 @@
+// Footer.jsx
 import { FaLinkedin, FaWhatsapp, FaFacebookF } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import "./Footer.css";

@@ -13,7 +13,7 @@ function ProductModal({ productId, onClose }) {
 
   const fetchProductDetails = async () => {
     try {
-      const response = await fetch(`http://192.168.1.6:5000/api/products/${productId}`);
+      const response = await fetch(`http://192.168.1.9:5001/api/products/${productId}`);
       const data = await response.json();
       console.log('Product details:', data); // Debug log
       

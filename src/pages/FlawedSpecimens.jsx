@@ -12,6 +12,9 @@ function FlawedSpecimens({ category: initialCategory }) {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
+  // Configuration
+  const BACKEND_URL = "http://192.168.1.9:5001";
+
   // Categories
   const categories = [
     "All",
@@ -62,7 +65,6 @@ function FlawedSpecimens({ category: initialCategory }) {
     "POD & Training Specimens": "/flawed-specimens/pod-training"
   };
 
-  // Sync category from route
   useEffect(() => {
     if (initialCategory) {
       setSelectedCategory(initialCategory);
@@ -89,15 +91,54 @@ function FlawedSpecimens({ category: initialCategory }) {
     return () => window.removeEventListener("scroll", reveal);
   }, [products]);
 
-  // Fetch products
+  // --- IMAGE HELPER FUNCTION ---
+  const getImageSrc = (product) => {
+    if (!product) return "/images/placeholder.jpg";
+
+    let imagePath = 
+      product.image_url || 
+      product.mainImage || 
+      (product.images && product.images.length > 0 ? product.images[0] : null);
+
+    if (!imagePath) return "/images/placeholder.jpg";
+
+    if (typeof imagePath === 'object') {
+      if (imagePath.url) imagePath = imagePath.url;
+      else if (imagePath.path) imagePath = imagePath.path;
+      else return "/images/placeholder.jpg";
+    }
+
+    const pathString = String(imagePath);
+
+    if (pathString.startsWith("http") || pathString.startsWith("blob:")) {
+      return pathString;
+    }
+
+    const cleanPath = pathString.startsWith("/") ? pathString : `/${pathString}`;
+    return `${BACKEND_URL}${cleanPath}`;
+  };
+
+  // Helper for material string
+  const getMaterialString = (material) => {
+    if (!material) return null;
+    if (Array.isArray(material)) return material[0];
+    if (typeof material === 'object') return JSON.stringify(material);
+    return String(material);
+  };
+
+  // Fetch products with sorting logic
   const fetchProducts = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/products?type=flawed_specimen"
+        `${BACKEND_URL}/api/products?type=flawed_specimen`
       );
       const data = await response.json();
       if (data.success) {
-        setProducts(data.products || []);
+        // --- ADDED SORTING LOGIC HERE ---
+        const sortedProducts = (data.products || []).sort((a, b) => {
+          return (a.sort_order || 0) - (b.sort_order || 0);
+        });
+        setProducts(sortedProducts);
       }
       setLoading(false);
     } catch (err) {
@@ -135,39 +176,75 @@ function FlawedSpecimens({ category: initialCategory }) {
     navigate("/flawed-specimens");
   };
 
-  // Page title
   const getPageTitle = () =>
     selectedCategory !== "All" ? selectedCategory : "Flawed Specimens";
 
-  // Page description
   const getPageDescription = () => {
     const descriptions = {
-      All:
-        "Certified flawed specimens for NDT training, qualification, and probability of detection studies",
-      "Ultrasonic Testing Flawed specimens":
-        "UT flawed specimens for sensitivity, resolution, and defect characterization",
-      "Dye Penetrant Flawed specimens":
-        "Surface-breaking flaw specimens for PT training and certification",
-      "Eddy Current Flawed specimens":
-        "Conductive material specimens with artificial and natural flaws",
-      "Radiography Flawed specimens":
-        "Radiographic specimens for image interpretation and flaw sizing",
-      "Visual testing Flawed specimens":
-        "VT specimens for visual inspection training and evaluation",
-      "Paut and ToFD Flawed specimens":
-        "Advanced PAUT & TOFD flawed specimens for weld inspection",
-      "Welded Specimens":
-        "Welded flawed specimens with realistic fabrication defects",
-      "Advanced NDT Validation Specimens":
-        "High-precision specimens for POD and method validation"
+      All: "Certified flawed specimens for NDT training, qualification, and probability of detection studies",
+      "Ultrasonic Testing Flawed specimens": "UT flawed specimens for sensitivity, resolution, and defect characterization",
+      "Dye Penetrant Flawed specimens": "Surface-breaking flaw specimens for PT training and certification",
+      "Eddy Current Flawed specimens": "Conductive material specimens with artificial and natural flaws",
+      "Radiography Flawed specimens": "Radiographic specimens for image interpretation and flaw sizing",
+      "Visual testing Flawed specimens": "VT specimens for visual inspection training and evaluation",
+      "Paut and ToFD Flawed specimens": "Advanced PAUT & TOFD flawed specimens for weld inspection",
+      "Welded Specimens": "Welded flawed specimens with realistic fabrication defects",
+      "Advanced NDT Validation Specimens": "High-precision specimens for POD and method validation"
     };
     return descriptions[selectedCategory] || descriptions.All;
+  };
+
+  // --- SVG ICONS ---
+  const Icons = {
+    Search: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    ),
+    Close: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    ),
+    Box: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+      </svg>
+    ),
+    Ruler: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 12h20"></path>
+        <path d="M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"></path>
+        <path d="M2 12V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v6"></path>
+        <path d="M12 2v20"></path>
+      </svg>
+    ),
+    ArrowRight: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+    ),
+    Empty: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    ),
+    ArrowRightSm: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+         <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    )
   };
 
   return (
     <div className="flawed-specimens-container">
       <div className="page-container-wrapper">
-        {/* Header */}
         <div className="page-header">
           <div className="header-content">
             <span className="header-badge">NDT TRAINING & VALIDATION</span>
@@ -176,15 +253,11 @@ function FlawedSpecimens({ category: initialCategory }) {
 
             <div className="header-stats">
               <div className="stat-item">
-                <span className="stat-number">
-                  {filteredProducts.length}
-                </span>
+                <span className="stat-number">{filteredProducts.length}</span>
                 <span className="stat-label">Products</span>
               </div>
               <div className="stat-item">
-                <span className="stat-number">
-                  {categories.length - 1}
-                </span>
+                <span className="stat-number">{categories.length - 1}</span>
                 <span className="stat-label">Categories</span>
               </div>
               <div className="stat-item">
@@ -195,31 +268,38 @@ function FlawedSpecimens({ category: initialCategory }) {
           </div>
         </div>
 
-        {/* Breadcrumb */}
         {selectedCategory !== "All" && (
           <div className="breadcrumb">
-            <span
-              className="breadcrumb-link"
-              onClick={() => navigate("/flawed-specimens")}
-            >
+            <span className="breadcrumb-link" onClick={() => navigate("/flawed-specimens")}>
               Flawed Specimens
             </span>
-            <span className="breadcrumb-separator">›</span>
+            <span className="breadcrumb-separator"><Icons.ArrowRightSm /></span>
             <span className="breadcrumb-current">{selectedCategory}</span>
           </div>
         )}
 
-        {/* Filters */}
         <div className="filters-section">
+          <div className="filters-header">
+             <h2>Browse Specimens</h2>
+             <p>Certified flawed specimens for detailed NDT evaluation</p>
+          </div>
+
           <div className="search-bar">
             <input
               type="text"
               placeholder="Search flawed specimens..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
             />
-            {searchTerm && (
-              <button onClick={() => setSearchTerm("")}>✕</button>
+            {searchTerm ? (
+              <button className="search-clear" onClick={() => setSearchTerm("")}>
+                <Icons.Close />
+              </button>
+            ) : (
+              <div className="search-icon-wrapper">
+                <Icons.Search />
+              </div>
             )}
           </div>
 
@@ -227,55 +307,89 @@ function FlawedSpecimens({ category: initialCategory }) {
             {categories.map((cat) => (
               <button
                 key={cat}
-                className={`category-btn ${
-                  selectedCategory === cat ? "active" : ""
-                }`}
+                className={`category-btn ${selectedCategory === cat ? "active" : ""}`}
                 onClick={() => handleCategoryChange(cat)}
               >
                 {cat}
               </button>
             ))}
           </div>
+          
+           {(searchTerm || selectedCategory !== "All") && (
+            <div className="active-filters">
+              <span className="filters-label">Active filters:</span>
+              {selectedCategory !== "All" && (
+                <span className="filter-tag">
+                  {selectedCategory}
+                  <button onClick={() => handleCategoryChange("All")}><Icons.Close /></button>
+                </span>
+              )}
+              {searchTerm && (
+                <span className="filter-tag">
+                  "{searchTerm}"
+                  <button onClick={() => setSearchTerm("")}><Icons.Close /></button>
+                </span>
+              )}
+              <button className="clear-all-btn" onClick={clearFilters}>
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Products */}
         {loading ? (
-          <div className="loading">Loading flawed specimens...</div>
+          <div className="loading">
+             <div className="loading-spinner"></div>
+             <span>Loading flawed specimens...</span>
+          </div>
         ) : (
           <div className="products-container">
+            <div className="results-header">
+              <span className="results-count">
+                Showing {filteredProducts.length} of {products.length} products
+              </span>
+            </div>
+
             {filteredProducts.length > 0 ? (
               <div className="products-grid">
                 {filteredProducts.map((product, index) => (
                   <div
                     key={product.id}
-                    className="product-card"
+                    className="product-card hardware-accelerated"
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
-                    <div
-                      className="product-image"
-                      onClick={() => handleViewDetails(product)}
-                    >
+                    <div className="product-image" onClick={() => handleViewDetails(product)}>
                       <img
-                        src={`http://localhost:5000${product.image_url}`}
+                        src={getImageSrc(product)}
                         alt={product.name}
-                        onError={(e) =>
-                          (e.target.src = "/images/placeholder.jpg")
-                        }
+                        loading="lazy"
+                        onError={(e) => (e.target.src = "/images/placeholder.jpg")}
                       />
                     </div>
 
                     <div className="product-info">
-                      <span className="product-category-badge">
-                        {product.category}
-                      </span>
+                      <span className="product-category-badge">{product.category}</span>
                       <h3>{product.name}</h3>
-                      <p>{product.description}</p>
+                      <p className="product-description">{product.description}</p>
+                      
+                       <div className="product-meta">
+                        {(product.materials || product.material) && (
+                          <span className="meta-item">
+                            <span className="meta-icon"><Icons.Box /></span>
+                            {getMaterialString(product.materials || product.material)}
+                          </span>
+                        )}
+                         {product.dimensions && (
+                          <span className="meta-item">
+                            <span className="meta-icon"><Icons.Ruler /></span>
+                            {product.dimensions}
+                          </span>
+                        )}
+                      </div>
 
-                      <button
-                        className="view-details-btn"
-                        onClick={() => handleViewDetails(product)}
-                      >
-                        View Details →
+                      <button className="view-details-btn" onClick={() => handleViewDetails(product)}>
+                        <span>View Details</span>
+                        <span className="btn-arrow"><Icons.ArrowRight /></span>
                       </button>
                     </div>
                   </div>
@@ -283,8 +397,9 @@ function FlawedSpecimens({ category: initialCategory }) {
               </div>
             ) : (
               <div className="no-products">
+                 <div className="no-products-icon"><Icons.Empty /></div>
                 <h3>No Products Found</h3>
-                <button onClick={clearFilters}>
+                <button className="reset-btn" onClick={clearFilters}>
                   Clear Filters & Show All
                 </button>
               </div>
