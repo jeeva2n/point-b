@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-// import './css/AdminDashboard.css';
+import './AdminOrders.css';
 
 const getBackendUrl = () => {
   return localStorage.getItem('backend_url') || 'http://192.168.1.9:5001';
@@ -148,6 +148,7 @@ const AdminOrders = () => {
   const formatPrice = (p) => `₹${parseFloat(p || 0).toFixed(2)}`;
 
   return (
+
     <div className="admin-dashboard">
       <div className="dashboard-header">
         <div className="header-left">

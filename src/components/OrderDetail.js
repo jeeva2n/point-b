@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import './Cart.css'; // Re-using Cart CSS for consistency, or create OrderDetail.css
+import '../pages/css/Cart.css';
+
 
 const getBackendUrl = () => {
   return localStorage.getItem('backend_url') || 'http://192.168.1.9:5001';
@@ -18,7 +19,6 @@ const OrderDetail = () => {
     const fetchOrder = async () => {
       try {
         const token = localStorage.getItem('token');
-        // Note: You might need to add headers if your API requires auth for viewing orders
         const response = await fetch(`${backendUrl}/api/orders/${orderId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -42,8 +42,26 @@ const OrderDetail = () => {
     if (orderId) fetchOrder();
   }, [orderId, backendUrl]);
 
-  if (loading) return <div className="cart-container loading"><div className="loading-spinner"></div></div>;
-  if (error) return <div className="cart-container"><div className="error-message">{error}</div><button onClick={() => navigate('/account')}>Back to Account</button></div>;
+  if (loading) {
+    return (
+      <div className="cart-container loading">
+        <div className="loading-spinner"></div>
+        <p>Loading order details...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="cart-container">
+        <div className="error-message">{error}</div>
+        <button className="back-btn" onClick={() => navigate('/account')}>
+          Back to Account
+        </button>
+      </div>
+    );
+  }
+
   if (!order) return null;
 
   return (
@@ -90,11 +108,11 @@ const OrderDetail = () => {
               
               <div className="cart-item-details">
                 <h3>{item.product_name}</h3>
-                <p className="item-price">${parseFloat(item.price).toFixed(2)} x {item.quantity}</p>
+                <p className="item-price">₹{parseFloat(item.price).toFixed(2)} x {item.quantity}</p>
               </div>
               
               <div className="cart-item-total">
-                ${parseFloat(item.total).toFixed(2)}
+                ₹{parseFloat(item.total).toFixed(2)}
               </div>
             </div>
           ))}
@@ -104,21 +122,44 @@ const OrderDetail = () => {
           <div className="summary-details">
             <div className="cart-total">
               <span>Subtotal:</span>
-              <span>${parseFloat(order.subtotal).toFixed(2)}</span>
+              <span>₹{parseFloat(order.subtotal).toFixed(2)}</span>
             </div>
             <div className="cart-total">
-              <span>Tax (18%):</span>
-              <span>${parseFloat(order.tax).toFixed(2)}</span>
+              <span>Tax (18% GST):</span>
+              <span>₹{parseFloat(order.tax).toFixed(2)}</span>
             </div>
             <div className="cart-total">
               <span>Shipping:</span>
-              <span>${parseFloat(order.shipping_cost).toFixed(2)}</span>
+              <span>₹{parseFloat(order.shipping_cost).toFixed(2)}</span>
             </div>
             <div className="cart-total grand-total">
               <span>Total Paid:</span>
-              <span>${parseFloat(order.total_amount).toFixed(2)}</span>
+              <span>₹{parseFloat(order.total_amount).toFixed(2)}</span>
             </div>
           </div>
+        </div>
+
+        {order.notes && (
+          <div className="order-notes-section">
+            <h3>Order Notes</h3>
+            <p className="quote-note">{order.notes}</p>
+          </div>
+        )}
+
+        <div className="order-actions">
+          <button 
+            className="continue-shopping-btn"
+            onClick={() => navigate('/flawed-specimens')}
+          >
+            Continue Shopping
+          </button>
+          
+          <button 
+            className="view-orders-btn"
+            onClick={() => navigate('/account')}
+          >
+            View All Orders
+          </button>
         </div>
       </div>
     </div>

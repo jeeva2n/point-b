@@ -8,9 +8,9 @@
   --warning-color: #f59e0b;
   --light-color: #f9fafb;
   --dark-color: #1f2937;
-  --gray-100: #f3f4f6;
+  --gray-100: #f6f3f4;
   --gray-200: #e5e7eb;
-  --gray-300: #d1d5db;
+  --gray-300: #dbd1d1;
   --gray-400: #9ca3af;
   --gray-500: #6b7280;
   --gray-600: #4b5563;
@@ -820,7 +820,7 @@ input:checked + .toggle-slider:before {
 }
 
 .view-button {
-  background-color: var(--gray-100);
+  background-color:rgb(43, 226, 180);
   color: var(--gray-700);
 }
 
@@ -829,8 +829,8 @@ input:checked + .toggle-slider:before {
 }
 
 .delete-button {
-  background-color: var(--gray-100);
-  color: var(--danger-color);
+  background-color: rgb(218, 105, 105);
+  color: black;
 }
 
 .delete-button:hover {

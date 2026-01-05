@@ -814,7 +814,6 @@
   background: linear-gradient(135deg, #f8f9fa, transparent);
   padding: 25px;
   border-radius: 12px;
-  border-left: 4px solid var(--accent-green);
   animation: textSlideUp 0.5s ease-out 0.5s both;
 }
 

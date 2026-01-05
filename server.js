@@ -474,6 +474,67 @@ app.post('/api/products', upload.array('images', 10), async (req, res) => {
   }
 });
 
+// ======================
+// PRODUCT REORDER ENDPOINT
+// ======================
+
+// PUT /api/products/reorder - Update sort order of multiple products
+app.put('/api/products/reorder', async (req, res) => {
+  try {
+    const { items } = req.body;
+    
+    console.log('📋 Received reorder request for', items?.length, 'items');
+    
+    if (!items || !Array.isArray(items)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid request data. Expected items array.'
+      });
+    }
+    
+    const connection = await db.getConnection();
+    
+    try {
+      await connection.beginTransaction();
+      
+      // Update each product's sort_order
+      for (const item of items) {
+        if (item.id && typeof item.sort_order === 'number') {
+          console.log(`   Updating product ${item.id} to sort_order ${item.sort_order}`);
+          await connection.query(
+            'UPDATE products SET sort_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [item.sort_order, item.id]
+          );
+        }
+      }
+      
+      await connection.commit();
+      connection.release();
+      
+      console.log(`✅ Reordered ${items.length} products successfully`);
+      
+      res.json({
+        success: true,
+        message: 'Product order updated successfully'
+      });
+      
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      console.error('❌ Transaction error:', error);
+      throw error;
+    }
+    
+  } catch (error) {
+    console.error('❌ Error reordering products:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update product order',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // UPDATE PRODUCT
 app.put('/api/products/:id', upload.array('images', 10), async (req, res) => {
   try {

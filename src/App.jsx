@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Account from './pages/Account';
 import AdminOrders from './components/AdminOrders';
 import OrderDetail from './components/OrderDetail';
+import Gallery from './pages/Gallery';
 
 // Lazy-loaded pages
 const Home = lazy(() => import('./pages/Home'));
@@ -127,8 +128,8 @@ function App() {
             {/* ==========================================
                 RESOURCES ROUTES - Commented out
             ========================================== */}
-            {/* <Route path="/resources" element={<Gallery />} /> */}
-            {/* <Route path="/resources/gallery" element={<Gallery />} /> */}
+            <Route path="/resources" element={<Gallery />} />
+            <Route path="/resources/gallery" element={<Gallery />} />
             {/* <Route path="/resources/certifications" element={<Certifications />} /> */}
             {/* <Route path="/resources/downloads" element={<Downloads />} /> */}
             {/* <Route path="/resources/calculator" element={<Calculator />} /> */}

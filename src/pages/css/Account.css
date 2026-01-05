@@ -1,317 +1,860 @@
+:root {
+  --account-primary: #2563eb;
+  --account-primary-hover: #1d4ed8;
+  --account-primary-light: #dbeafe;
+  --account-secondary: #64748b;
+  --account-success: #10b981;
+  --account-success-light: #d1fae5;
+  --account-warning: #f59e0b;
+  --account-warning-light: #fef3c7;
+  --account-danger: #ef4444;
+  --account-danger-light: #fee2e2;
+  --account-info: #06b6d4;
+  --account-info-light: #cffafe;
+  
+  --account-text-primary: #1e293b;
+  --account-text-secondary: #64748b;
+  --account-text-muted: #94a3b8;
+  
+  --account-bg-primary: #ffffff;
+  --account-bg-secondary: #f8fafc;
+  --account-bg-tertiary: #f1f5f9;
+  
+  --account-border: #e2e8f0;
+  --account-radius: 12px;
+  --account-radius-sm: 8px;
+  --account-radius-lg: 16px;
+  
+  --account-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --account-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --account-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* =============================================
+   2. PAGE LAYOUT
+   ============================================= */
 .account-page {
   min-height: 100vh;
-  background: #f5f7fa;
-  padding: 40px 20px;
+  background: #ffffff;
+  padding: 2rem;
 }
 
 .account-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 280px 1fr;
-  gap: 30px;
+  gap: 2rem;
+  min-height: calc(100vh - 4rem);
 }
 
-.account-loading,
+/* =============================================
+   3. LOADING & ERROR STATES
+   ============================================= */
+.account-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+}
+
+.account-loading .loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid var(--account-border);
+  border-top-color: var(--account-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.account-loading p {
+  color: var(--account-text-secondary);
+  font-size: 1rem;
+}
+
 .account-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
   text-align: center;
-  padding: 60px 20px;
-  font-size: 18px;
-  color: #666;
+  gap: 1rem;
 }
 
-.account-error {
-  color: #dc3545;
+.account-error h2 {
+  color: var(--account-text-primary);
+  margin: 0;
 }
 
-/* Sidebar */
+.account-error p {
+  color: var(--account-text-secondary);
+  margin: 0;
+}
+
+.account-error .login-button {
+  padding: 0.75rem 2rem;
+  background: var(--account-primary);
+  color: white;
+  border: none;
+  border-radius: var(--account-radius-sm);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.account-error .login-button:hover {
+  background: var(--account-primary-hover);
+}
+
+/* =============================================
+   4. SIDEBAR
+   ============================================= */
 .account-sidebar {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 25px;
+  background: var(--account-bg-primary);
+  border-radius: var(--account-radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--account-shadow-sm);
+  border: 1px solid var(--account-border);
   height: fit-content;
   position: sticky;
-  top: 20px;
+  top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .account-user-info {
   text-align: center;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #eee;
-  margin-bottom: 20px;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--account-border);
+}
+
+.user-avatar {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, var(--account-primary) 0%, var(--account-primary-hover) 100%);
+  color: white;
+  font-size: 2rem;
+  font-weight: 600;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
 }
 
 .account-user-info h3 {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 8px;
+  margin: 0 0 0.25rem 0;
+  font-size: 1.125rem;
+  color: var(--account-text-primary);
+  font-weight: 600;
 }
 
-.account-user-info p {
-  color: #666;
-  font-size: 14px;
+.user-email {
+  margin: 0;
+  color: var(--account-text-secondary);
+  font-size: 0.875rem;
   word-break: break-all;
 }
 
+/* =============================================
+   5. NAVIGATION TABS
+   ============================================= */
 .account-tabs {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 0.5rem;
 }
 
 .account-tabs .tab-button {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  background: #f8f9fa;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: transparent;
   border: none;
-  border-radius: 10px;
-  font-size: 15px;
+  border-radius: var(--account-radius-sm);
+  font-size: 0.9375rem;
   font-weight: 500;
-  color: #333;
+  color: var(--account-text-secondary);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
   text-align: left;
 }
 
 .account-tabs .tab-button:hover {
-  background: #e8f4fd;
-  color: #0066ff;
+  background: var(--account-bg-tertiary);
+  color: var(--account-text-primary);
 }
 
 .account-tabs .tab-button.active {
-  background: linear-gradient(135deg, #0066ff, #0052cc);
-  color: white;
+  background: var(--account-primary-light);
+  color: var(--account-primary);
+}
+
+.tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.tab-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.tab-text {
+  flex: 1;
 }
 
 .count-badge {
-  background: rgba(0, 0, 0, 0.1);
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 12px;
+  background: var(--account-bg-tertiary);
+  color: var(--account-text-secondary);
+  padding: 0.125rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
   font-weight: 600;
+  min-width: 24px;
+  text-align: center;
 }
 
 .tab-button.active .count-badge {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--account-primary);
+  color: white;
 }
 
+/* =============================================
+   6. LOGOUT BUTTON
+   ============================================= */
 .logout-button {
-  width: 100%;
-  padding: 14px;
-  background: #f8f9fa;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 30%;
+  padding: 0.875rem 1rem;
+  background: transparent;
+  border: 1px solid var(--account-danger);
+  border-radius: var(--account-radius-sm);
+  font-size: 0.9375rem;
   font-weight: 500;
-  color: #666;
+  color: var(--account-danger);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
+  margin-top: auto;
 }
 
 .logout-button:hover {
-  background: #fff0f0;
-  border-color: #dc3545;
-  color: #dc3545;
+  background: var(--account-danger);
+  color: white;
 }
 
-/* Content Area */
+.logout-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* =============================================
+   7. MAIN CONTENT AREA
+   ============================================= */
 .account-content {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 30px;
+  min-width: 0;
 }
 
-.orders-section h2,
-.quotes-section h2,
-.profile-section h2 {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 25px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #f0f0f0;
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--account-danger-light);
+  color: var(--account-danger);
+  border-radius: var(--account-radius);
+  margin-bottom: 1.5rem;
 }
 
+.error-message svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.error-message span {
+  flex: 1;
+}
+
+.retry-button {
+  padding: 0.375rem 0.75rem;
+  background: var(--account-danger);
+  color: white;
+  border: none;
+  border-radius: var(--account-radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.retry-button:hover {
+  opacity: 0.9;
+}
+
+/* =============================================
+   8. SECTION HEADER
+   ============================================= */
+.section-header {
+  margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.5rem;
+  color: var(--account-text-primary);
+  font-weight: 600;
+}
+
+.section-subtitle {
+  margin: 0;
+  color: var(--account-text-secondary);
+  font-size: 0.9375rem;
+}
+
+/* =============================================
+   9. EMPTY STATE
+   ============================================= */
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
-  color: #666;
+  padding: 4rem 2rem;
+  background: var(--account-bg-primary);
+  border-radius: var(--account-radius-lg);
+  box-shadow: var(--account-shadow-sm);
+  border: 1px solid var(--account-border);
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--account-bg-tertiary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+}
+
+.empty-icon svg {
+  width: 40px;
+  height: 40px;
+  color: var(--account-text-muted);
+}
+
+.empty-state h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: var(--account-text-primary);
 }
 
 .empty-state p {
-  margin-bottom: 20px;
-  font-size: 16px;
+  margin: 0 0 1.5rem 0;
+  color: var(--account-text-secondary);
 }
 
 .shop-now-button {
-  padding: 14px 30px;
-  background: linear-gradient(135deg, #0066ff, #0052cc);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  background: linear-gradient(135deg, var(--account-primary) 0%, var(--account-primary-hover) 100%);
   color: white;
   border: none;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
+  border-radius: var(--account-radius-sm);
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: var(--account-shadow-md);
 }
 
 .shop-now-button:hover {
-  background: linear-gradient(135deg, #0052cc, #003d99);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
+  box-shadow: var(--account-shadow-lg);
 }
 
-/* Order/Quote Cards */
-.orders-list,
-.quotes-list {
+/* =============================================
+   10. ORDERS LIST
+   ============================================= */
+.orders-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 1rem;
 }
 
-.order-card,
-.quote-card {
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 20px;
-  transition: all 0.3s ease;
+.order-card {
+  background: var(--account-bg-primary);
+  border-radius: var(--account-radius);
+  box-shadow: var(--account-shadow-sm);
+  border: 1px solid var(--account-border);
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.2s;
 }
 
-.order-card:hover,
-.quote-card:hover {
-  border-color: #0066ff;
-  box-shadow: 0 4px 15px rgba(0, 102, 255, 0.1);
+.order-card:hover {
+  box-shadow: var(--account-shadow-md);
+  transform: translateY(-2px);
 }
 
-.order-header,
-.quote-header {
+.order-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 1rem 1.25rem;
+  background: var(--account-bg-tertiary);
+  border-bottom: 1px solid var(--account-border);
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
-.order-date,
-.quote-date {
-  font-size: 14px;
-  color: #666;
-}
-
-.order-status,
-.quote-status {
-  font-size: 14px;
-}
-
-.order-status span,
-.quote-status span {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: capitalize;
-}
-
-.status-pending { background: #fff3cd; color: #856404; }
-.status-confirmed { background: #d4edda; color: #155724; }
-.status-processing { background: #cce5ff; color: #004085; }
-.status-shipped { background: #d1ecf1; color: #0c5460; }
-.status-delivered { background: #d4edda; color: #155724; }
-.status-cancelled { background: #f8d7da; color: #721c24; }
-.status-submitted { background: #e8f4fd; color: #0066ff; }
-.status-quoted { background: #d4edda; color: #155724; }
-.status-active { background: #e8f4fd; color: #0066ff; }
-
-.order-content,
-.quote-content {
-  margin-bottom: 15px;
-}
-
-.order-products,
-.quote-products {
-  color: #333;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.order-footer,
-.quote-footer {
+.order-info {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.order-number {
+  font-weight: 600;
+  color: var(--account-text-primary);
+  font-size: 1rem;
+}
+
+.order-date {
+  color: var(--account-text-secondary);
+  font-size: 0.875rem;
+}
+
+/* =============================================
+   11. STATUS BADGES
+   ============================================= */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.875rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pending {
+  background: var(--account-warning-light);
+  color: var(--account-warning);
+}
+
+.status-processing {
+  background: var(--account-info-light);
+  color: var(--account-info);
+}
+
+.status-shipped {
+  background: var(--account-primary-light);
+  color: var(--account-primary);
+}
+
+.status-delivered,
+.status-completed {
+  background: var(--account-success-light);
+  color: var(--account-success);
+}
+
+.status-cancelled,
+.status-rejected {
+  background: var(--account-danger-light);
+  color: var(--account-danger);
+}
+
+.status-submitted {
+  background: var(--account-info-light);
+  color: var(--account-info);
+}
+
+.status-quoted,
+.status-accepted {
+  background: var(--account-success-light);
+  color: var(--account-success);
+}
+
+/* =============================================
+   12. ORDER CONTENT
+   ============================================= */
+.order-content {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.order-items,
+.order-total,
+.order-message {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.order-content .label {
+  font-weight: 500;
+  color: var(--account-text-secondary);
+  font-size: 0.875rem;
+}
+
+.order-content .value {
+  color: var(--account-text-primary);
+  font-size: 0.9375rem;
+}
+
+.order-content .value.price {
+  font-weight: 600;
+  color: var(--account-primary);
+  font-size: 1rem;
+}
+
+.order-message .value {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* =============================================
+   13. ORDER FOOTER
+   ============================================= */
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--account-border);
+  background: var(--account-bg-secondary);
 }
 
 .view-details-button {
-  padding: 10px 20px;
-  background: #f8f9fa;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: var(--account-primary);
+  color: white;
+  border: none;
+  border-radius: var(--account-radius-sm);
+  font-size: 0.875rem;
   font-weight: 500;
-  color: #333;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.2s;
 }
 
 .view-details-button:hover {
-  background: #0066ff;
-  border-color: #0066ff;
-  color: white;
+  background: var(--account-primary-hover);
 }
 
-/* Profile Section */
-.profile-info {
+.view-details-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.info-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--account-text-secondary);
+  font-size: 0.875rem;
+}
+
+.info-text svg {
+  width: 16px;
+  height: 16px;
+  color: var(--account-info);
+}
+
+/* =============================================
+   14. PROFILE SECTION
+   ============================================= */
+.profile-card {
+  background: var(--account-bg-primary);
+  border-radius: var(--account-radius-lg);
+  padding: 2rem;
+  box-shadow: var(--account-shadow-sm);
+  border: 1px solid var(--account-border);
+}
+
+.profile-avatar-large {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, var(--account-primary) 0%, var(--account-primary-hover) 100%);
+  color: white;
+  font-size: 2.5rem;
+  font-weight: 600;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 2rem;
+}
+
+.profile-details {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 1rem;
 }
 
 .info-row {
   display: flex;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 10px;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  background: var(--account-bg-secondary);
+  border-radius: var(--account-radius-sm);
+  border: 1px solid var(--account-border);
 }
 
-.info-label {
-  font-weight: 600;
-  color: #333;
-  min-width: 150px;
+.info-row label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--account-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.info-value {
-  color: #666;
+.info-row span {
+  font-size: 1rem;
+  color: var(--account-text-primary);
+  font-weight: 500;
 }
 
-/* Responsive */
+.profile-actions {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.help-text {
+  color: var(--account-text-secondary);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* =============================================
+   15. RESPONSIVE DESIGN
+   ============================================= */
+@media (max-width: 1024px) {
+  .account-container {
+    grid-template-columns: 240px 1fr;
+    gap: 1.5rem;
+  }
+  
+  .user-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+}
+
 @media (max-width: 768px) {
+  .account-page {
+    padding: 1rem;
+  }
+  
+  .account-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .account-sidebar {
+    position: relative;
+    top: 0;
+    padding: 1rem;
+  }
+  
+  .account-user-info {
+    padding-bottom: 1rem;
+  }
+  
+  .user-avatar {
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .account-tabs {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 0.25rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  .account-tabs .tab-button {
+    flex-direction: column;
+    padding: 0.75rem;
+    min-width: fit-content;
+    white-space: nowrap;
+    font-size: 0.8125rem;
+  }
+  
+  .tab-icon {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .logout-button {
+    margin-top: 0;
+    padding: 0.75rem;
+  }
+  
+  .section-header h2 {
+    font-size: 1.25rem;
+  }
+  
+  .order-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .order-footer {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+  
+  .view-details-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .info-text {
+    justify-content: center;
+  }
+  
+  .profile-card {
+    padding: 1.5rem;
+  }
+  
+  .profile-avatar-large {
+    width: 80px;
+    height: 80px;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .empty-state {
+    padding: 2rem 1rem;
+  }
+  
+  .empty-icon {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .empty-icon svg {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .account-page {
+    padding: 0.5rem;
+  }
+  
+  .account-tabs .tab-button {
+    padding: 0.5rem;
+    gap: 0.25rem;
+  }
+  
+  .tab-text {
+    font-size: 0.75rem;
+  }
+  
+  .count-badge {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+  }
+  
+  .order-card {
+    border-radius: var(--account-radius-sm);
+  }
+  
+  .order-header,
+  .order-content,
+  .order-footer {
+    padding: 0.875rem 1rem;
+  }
+  
+  .shop-now-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* =============================================
+   16. PRINT STYLES
+   ============================================= */
+@media print {
+  .account-sidebar,
+  .logout-button,
+  .view-details-button,
+  .shop-now-button {
+    display: none !important;
+  }
+  
   .account-container {
     grid-template-columns: 1fr;
   }
-
-  .account-sidebar {
-    position: static;
+  
+  .order-card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ddd;
   }
+}
 
-  .order-header,
-  .quote-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+/* =============================================
+   17. ACCESSIBILITY
+   ============================================= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
+}
 
-  .info-row {
-    flex-direction: column;
-    gap: 5px;
-  }
+button:focus-visible {
+  outline: 3px solid var(--account-primary);
+  outline-offset: 2px;
+}
 
-  .info-label {
-    min-width: auto;
+/* =============================================
+   18. DARK MODE (OPTIONAL)
+   ============================================= */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --account-text-primary: #f1f5f9;
+    --account-text-secondary: #94a3b8;
+    --account-text-muted: #64748b;
+    
+    --account-bg-primary: #1e293b;
+    --account-bg-secondary: #0f172a;
+    --account-bg-tertiary: #334155;
+    
+    --account-border: #475569;
   }
 }

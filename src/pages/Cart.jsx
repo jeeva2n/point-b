@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import './css/Cart.css';
 
 // --- Backend Helper ---
-// Updated to port 5001 to match ProductDetail and likely your running backend
 const getBackendUrl = () => {
   return localStorage.getItem('backend_url') || 'http://192.168.1.9:5001';
 };
@@ -393,14 +392,14 @@ const Cart = () => {
       // SEND EMAIL USING WEB3FORMS
       const mailFormData = new FormData();
       mailFormData.append("access_key", WEB3_ACCESS_KEY);
-      mailFormData.append("subject", `New Order #${orderNumber} - $${totalAmount} - DAKS NDT Services`);
+      mailFormData.append("subject", `New Order #${orderNumber} - Rs.${totalAmount} - DAKS NDT Services`);
       mailFormData.append("name", formData.name);
       mailFormData.append("email", formData.email);
       mailFormData.append("phone", formData.phone);
       mailFormData.append("company", formData.company || 'Not provided');
       mailFormData.append("message", `
         New Purchase Order #${orderNumber}
-        Total Amount: $${totalAmount}
+        Total Amount: Rs.${totalAmount}
         
         Customer: ${formData.name}
         Email: ${formData.email}
@@ -416,7 +415,7 @@ const Cart = () => {
         Order Notes: ${formData.message || 'No special instructions'}
         
         Order Items:
-        ${cart.items.map(item => `- ${item.product_name} x${item.quantity || 1} @ $${parseFloat(item.price || 0).toFixed(2)} each = $${((item.price || 0) * (item.quantity || 1)).toFixed(2)}`).join('\n')}
+        ${cart.items.map(item => `- ${item.product_name} x${item.quantity || 1} @ Rs.${parseFloat(item.price || 0).toFixed(2)} each = Rs.${((item.price || 0) * (item.quantity || 1)).toFixed(2)}`).join('\n')}
       `);
       
       mailFormData.append("from_name", "DAKS NDT Order System");
@@ -709,170 +708,184 @@ const Cart = () => {
       <div className="cart-container">
         <h2>{activeTab === 'cart' ? 'Complete Your Order' : 'Submit Quote Request'}</h2>
         
-        <form className="checkout-form" onSubmit={activeTab === 'cart' ? processOrder : processQuoteRequest}>
-          <div className="form-section">
-            <h3>Contact Information</h3>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="name">Full Name *</label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="John Doe"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="email">Email Address *</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="john@example.com"
-                />
-              </div>
-            </div>
-            
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="phone">Phone Number *</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="+91 9876543210"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="company">Company Name</label>
-                <input
-                  type="text"
-                  id="company"
-                  name="company"
-                  value={formData.company}
-                  onChange={handleInputChange}
-                  placeholder="Your Company"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <div className="form-section">
-            <h3>Shipping Address</h3>
-            <div className="form-group">
-              <label htmlFor="address">Address</label>
-              <input
-                type="text"
-                id="address"
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                placeholder="Street Address"
-              />
-            </div>
-            
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="city">City</label>
-                <input
-                  type="text"
-                  id="city"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  placeholder="City"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="state">State</label>
-                <input
-                  type="text"
-                  id="state"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleInputChange}
-                  placeholder="State"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="zip">ZIP Code</label>
-                <input
-                  type="text"
-                  id="zip"
-                  name="zip"
-                  value={formData.zip}
-                  onChange={handleInputChange}
-                  placeholder="PIN Code"
-                />
-              </div>
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="country">Country</label>
-              <input
-                type="text"
-                id="country"
-                name="country"
-                value={formData.country}
-                onChange={handleInputChange}
-                placeholder="Country"
-              />
-            </div>
-          </div>
-          
-          <div className="form-section">
-            <h3>Additional Information</h3>
-            <div className="form-group">
-              <label htmlFor="message">
-                {activeTab === 'cart' ? 'Order Notes' : 'Quote Requirements'}
-              </label>
-              <textarea
-                id="message"
-                name="message"
-                value={formData.message}
-                onChange={handleInputChange}
-                rows="4"
-                placeholder={
-                  activeTab === 'cart' 
-                    ? 'Any special instructions for your order...' 
-                    : 'Please describe your requirements, specifications, or any other details...'
-                }
-              ></textarea>
-            </div>
-          </div>
-          
-          <div className="form-actions">
-            <button 
-              type="button" 
-              className="back-to-cart-btn"
-              onClick={() => setCheckoutStep('cart')}
-            >
-              Back to Cart
-            </button>
-            
-            <button 
-              type="submit" 
-              className="submit-order-btn"
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : 
-               (activeTab === 'cart' ? 'Place Order' : 'Submit Quote Request')}
-            </button>
-          </div>
-        </form>
+<form
+  className="checkoutForm"
+  onSubmit={activeTab === 'cart' ? processOrder : processQuoteRequest}
+>
+  {/* Contact Information */}
+  <div className="checkoutSection">
+    <h3 className="sectionTitle">Contact Information</h3>
+
+    <div className="formRow">
+      <div className="formField">
+        <label htmlFor="name">Full Name *</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          value={formData.name}
+          onChange={handleInputChange}
+          required
+          placeholder="John Doe"
+        />
+      </div>
+
+      <div className="formField">
+        <label htmlFor="email">Email Address *</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          required
+          placeholder="john@example.com"
+        />
+      </div>
+    </div>
+
+    <div className="formRow">
+      <div className="formField">
+        <label htmlFor="phone">Phone Number *</label>
+        <input
+          type="tel"
+          id="phone"
+          name="phone"
+          value={formData.phone}
+          onChange={handleInputChange}
+          required
+          placeholder="+91 9876543210"
+        />
+      </div>
+
+      <div className="formField">
+        <label htmlFor="company">Company Name</label>
+        <input
+          type="text"
+          id="company"
+          name="company"
+          value={formData.company}
+          onChange={handleInputChange}
+          placeholder="Your Company"
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* Shipping Address */}
+  <div className="checkoutSection">
+    <h3 className="sectionTitle">Shipping Address</h3>
+
+    <div className="formField">
+      <label htmlFor="address">Address</label>
+      <input
+        type="text"
+        id="address"
+        name="address"
+        value={formData.address}
+        onChange={handleInputChange}
+        placeholder="Street Address"
+      />
+    </div>
+
+    <div className="formRow">
+      <div className="formField">
+        <label htmlFor="city">City</label>
+        <input
+          type="text"
+          id="city"
+          name="city"
+          value={formData.city}
+          onChange={handleInputChange}
+          placeholder="City"
+        />
+      </div>
+
+      <div className="formField">
+        <label htmlFor="state">State</label>
+        <input
+          type="text"
+          id="state"
+          name="state"
+          value={formData.state}
+          onChange={handleInputChange}
+          placeholder="State"
+        />
+      </div>
+
+      <div className="formField">
+        <label htmlFor="zip">PIN Code</label>
+        <input
+          type="text"
+          id="zip"
+          name="zip"
+          value={formData.zip}
+          onChange={handleInputChange}
+          placeholder="PIN Code"
+        />
+      </div>
+    </div>
+
+    <div className="formField">
+      <label htmlFor="country">Country</label>
+      <input
+        type="text"
+        id="country"
+        name="country"
+        value={formData.country}
+        onChange={handleInputChange}
+        placeholder="Country"
+      />
+    </div>
+  </div>
+
+  {/* Additional Information */}
+  <div className="checkoutSection">
+    <h3 className="sectionTitle">Additional Information</h3>
+
+    <div className="formField">
+      <label htmlFor="message">
+        {activeTab === 'cart' ? 'Order Notes' : 'Quote Requirements'}
+      </label>
+      <textarea
+        id="message"
+        name="message"
+        value={formData.message}
+        onChange={handleInputChange}
+        rows="4"
+        placeholder={
+          activeTab === 'cart'
+            ? 'Any special instructions for your order...'
+            : 'Please describe your requirements, specifications, or any other details...'
+        }
+      />
+    </div>
+  </div>
+
+  {/* Actions */}
+  <div className="formActions">
+    <button
+      type="button"
+      className="secondaryBtn"
+      onClick={() => setCheckoutStep('cart')}
+    >
+      Back to Cart
+    </button>
+
+    <button
+      type="submit"
+      className="primaryBtn"
+      disabled={loading}
+    >
+      {loading
+        ? 'Processing...'
+        : activeTab === 'cart'
+        ? 'Place Order'
+        : 'Submit Quote Request'}
+    </button>
+  </div>
+</form>
+
       </div>
     );
   }
@@ -944,7 +957,7 @@ const Cart = () => {
                     <div className="cart-item-details">
                       <h3>{item.product_name}</h3>
                       <p className="item-description">{item.short_description || item.description}</p>
-                      <div className="item-price">${parseFloat(item.price || 0).toFixed(2)}</div>
+                      <div className="item-price">₹{parseFloat(item.price || 0).toFixed(2)}</div>
                       
                       <div className="quantity-controls">
                         <button 
@@ -965,7 +978,7 @@ const Cart = () => {
                     </div>
                     
                     <div className="cart-item-total">
-                      ${((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 1)).toFixed(2)}
+                      ₹{((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 1)).toFixed(2)}
                     </div>
                     
                     <button 
@@ -983,7 +996,7 @@ const Cart = () => {
                 <div className="summary-details">
                   <div className="cart-total">
                     <span>Subtotal:</span>
-                    <span>${calculateTotal(cart.items).toFixed(2)}</span>
+                    <span>₹{calculateTotal(cart.items).toFixed(2)}</span>
                   </div>
                   <div className="cart-total">
                     <span>Shipping:</span>
@@ -991,7 +1004,7 @@ const Cart = () => {
                   </div>
                   <div className="cart-total grand-total">
                     <span>Total:</span>
-                    <span>${calculateTotal(cart.items).toFixed(2)}</span>
+                    <span>₹{calculateTotal(cart.items).toFixed(2)}</span>
                   </div>
                 </div>
                 
