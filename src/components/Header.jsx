@@ -11,6 +11,7 @@ import f from '../assets/secondary/flawed.png';
 import r from '../assets/secondary/reference.png';
 import v from '../assets/secondary/validation.png';
 import o from '../assets/secondary/resources.png';
+import c from '../assets/secondary/company.jpg';
 
 function Header() {
   const [contactOpen, setContactOpen] = useState(false);
@@ -226,11 +227,11 @@ function Header() {
     'company': {
       title: 'Company',
       description: 'Learn about DAKS NDT Services - Our team, facilities, and vision',
-      image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=500',
+      image: c,
       items: [
         { name: 'About Us', link: '/company/about' },
         { name: 'Our Team', link: '/company/team' },
-        { name: 'Facilities & Infrastructure', link: '/company/facilities' }
+        { name: 'Our Clients', link: '/company/business-partners' }
       ]
     }
   };
@@ -306,8 +307,8 @@ function Header() {
               <Link to="/company" onClick={(e) => e.preventDefault()}>Company</Link>
             </li>
 
-            <li className="has-mega-menu">
-              <Link to="/contact-us">Contact Us</Link>
+            <li className="simple-menu-item">
+              <Link to="/quickcontact" onClick={closeAllMenus}>Contact Us</Link>
             </li>
           </ul>
         </nav>
@@ -572,7 +573,7 @@ function Header() {
           {/* Quick Links */}
           <div className="mobile-nav-section">
             <div className="mobile-nav-title">Quick Links</div>
-            <Link to="/contact-us" onClick={() => setOpenSidebar(false)}>
+            <Link to="/contact" onClick={() => setOpenSidebar(false)}>
               Contact Us
             </Link>
             <Link to="/" onClick={closeAllMenus}>

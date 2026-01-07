@@ -1,102 +1,76 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './css/Gallery.css';
-import g1 from '../assets/Gallary/g1.JPG';
-import g2 from '../assets/Gallary/g2.JPG';
-import g3 from '../assets/Gallary/g3.JPG';
-import g4 from '../assets/Gallary/g4.JPG';
-import g5 from '../assets/Gallary/g5.JPG';
-import g6 from '../assets/Gallary/g6.JPG';
-import g7 from '../assets/Gallary/g7.jpg';
-import g8 from '../assets/Gallary/g8.jpg';
-
-// --- SAMPLE DATA ---
-const mediaData = [
-  // PHOTOS
-  {
-    id: 1,
-    type: 'photo',
-    category: 'Machinery',
-    title: "CNC High Precision",
-    description: "Automated lathe systems for micro-precision cuts.",
-    src: g1
-  },
-  {
-    id: 2,
-    type: 'photo',
-    category: 'Facility',
-    title: "Assembly Line A",
-    description: "Our primary automated assembly facility in Pune.",
-    src: g2
-  },
-  {
-    id: 3,
-    type: 'photo',
-    category: 'Products',
-    title: "Carbide Drill Bits",
-    description: "Heat-resistant tungsten carbide coatings.",
-    src: g3
-  },
-  {
-    id: 4,
-    type: 'photo',
-    category: 'Quality',
-    title: "Laser Measurement",
-    description: "Micrometer-level tolerance testing.",
-    src: g4
-  },
-  {
-    id: 5,
-    type: 'photo',
-    category: 'Machinery',
-    title: "Heavy Duty Milling",
-    description: "Industrial-grade milling operations.",
-    src: g5
-  },
-  {
-    id: 6,
-    type: 'photo',
-    category: 'Facility',
-    title: "Production Floor",
-    description: "Optimized workflow and safety-first design.",
-    src: g6
-  },
-  {
-    id: 7,
-    type: 'photo',
-    category: 'Products',
-    title: "Precision Components",
-    description: "High tolerance engineered parts.",
-    src: g7
-  },
-  {
-    id: 8,
-    type: 'photo',
-    category: 'Quality',
-    title: "Inspection Lab",
-    description: "Multi-stage quality inspection process.",
-    src: g8
-  },
-
-  // VIDEOS (keep as-is)
-  {
-    id: 101,
-    type: 'video',
-    category: 'Process',
-    title: "Automated Robotic Arm",
-    description: "Watch our automated heavy lifting bots in action.",
-    thumbnail: g1, // optional: you can also use local images here
-    videoUrl: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-  },
-
-];
-
 
 function Gallery() {
-  const [filter, setFilter] = useState('Photos'); // Default to Photos
-  const [selectedVideo, setSelectedVideo] = useState(null); // For Modal
-  const [lightboxPhoto, setLightboxPhoto] = useState(null); // For Photo Lightbox
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0); // Current photo index
-  const [isAutoplay, setIsAutoplay] = useState(false); // Auto-scroll state
+  // State for data
+  const [mediaData, setMediaData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // UI State
+  const [filter, setFilter] = useState('Photos');
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState(null);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  // Backend URL
+  const backendUrl = 'http://192.168.1.9:5001';
+
+  // Helper function to get full URL for images/videos
+  const getFullUrl = useCallback((url) => {
+    if (!url) return null;
+    if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) {
+      return url;
+    }
+    return `${backendUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  }, [backendUrl]);
+
+  // Fetch gallery data from backend
+  const fetchGalleryData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`${backendUrl}/api/gallery`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.gallery && data.gallery.length > 0) {
+        // Transform backend data to match our UI format
+        const transformedData = data.gallery.map(item => ({
+          id: item.id,
+          type: item.file_type === 'video' ? 'video' : 'photo',
+          category: item.category || 'General',
+          title: item.title || 'Untitled',
+          description: item.description || '',
+          src: item.file_type === 'image' ? getFullUrl(item.file_url) : null,
+          thumbnail: item.thumbnail_url 
+            ? getFullUrl(item.thumbnail_url) 
+            : getFullUrl(item.file_url),
+          videoUrl: item.file_type === 'video' ? getFullUrl(item.file_url) : null
+        }));
+        
+        setMediaData(transformedData);
+      } else {
+        setMediaData([]);
+      }
+    } catch (err) {
+      console.error('Error fetching gallery:', err);
+      setError('Failed to load gallery. Please try again later.');
+      setMediaData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [backendUrl, getFullUrl]);
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchGalleryData();
+  }, [fetchGalleryData]);
 
   // Get all photos for navigation
   const allPhotos = mediaData.filter(item => item.type === 'photo');
@@ -105,6 +79,10 @@ function Gallery() {
   const filteredItems = mediaData.filter(item => 
     filter === 'Photos' ? item.type === 'photo' : item.type === 'video'
   );
+
+  // Counts
+  const photoCount = mediaData.filter(item => item.type === 'photo').length;
+  const videoCount = mediaData.filter(item => item.type === 'video').length;
 
   // Handle Photo Click
   const handlePhotoClick = (photoItem) => {
@@ -117,19 +95,19 @@ function Gallery() {
   // Handle Video Click
   const handleVideoClick = (videoItem) => {
     setSelectedVideo(videoItem);
-    // Prevent background scrolling when modal is open
     document.body.style.overflow = 'hidden';
   };
 
   // Close Photo Lightbox
   const closeLightbox = () => {
     setLightboxPhoto(null);
-    setIsAutoplay(false);
     document.body.style.overflow = 'auto';
   };
 
   // Navigate Photos
-  const navigatePhoto = (direction) => {
+  const navigatePhoto = useCallback((direction) => {
+    if (allPhotos.length === 0) return;
+    
     let newIndex;
     if (direction === 'next') {
       newIndex = (currentPhotoIndex + 1) % allPhotos.length;
@@ -138,23 +116,13 @@ function Gallery() {
     }
     setCurrentPhotoIndex(newIndex);
     setLightboxPhoto(allPhotos[newIndex]);
-  };
+  }, [currentPhotoIndex, allPhotos]);
 
-  // Toggle Autoplay
-  const toggleAutoplay = () => {
-    setIsAutoplay(!isAutoplay);
+  // Close Video Modal
+  const closeVideoModal = () => {
+    setSelectedVideo(null);
+    document.body.style.overflow = 'auto';
   };
-
-  // Autoplay Effect
-  useEffect(() => {
-    let interval;
-    if (isAutoplay && lightboxPhoto) {
-      interval = setInterval(() => {
-        navigatePhoto('next');
-      }, 3000); // Change photo every 3 seconds
-    }
-    return () => clearInterval(interval);
-  }, [isAutoplay, currentPhotoIndex, lightboxPhoto]);
 
   // Keyboard Navigation
   useEffect(() => {
@@ -164,15 +132,17 @@ function Gallery() {
         if (e.key === 'ArrowRight') navigatePhoto('next');
         if (e.key === 'Escape') closeLightbox();
       }
+      if (selectedVideo && e.key === 'Escape') {
+        closeVideoModal();
+      }
     };
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [lightboxPhoto, currentPhotoIndex]);
+  }, [lightboxPhoto, selectedVideo, navigatePhoto]);
 
-  // Close Modal
-  const closeVideoModal = () => {
-    setSelectedVideo(null);
-    document.body.style.overflow = 'auto';
+  // Handle image loading error
+  const handleImageError = (e) => {
+    e.target.style.display = 'none';
   };
 
   return (
@@ -184,7 +154,7 @@ function Gallery() {
             <h1 className="header-title">Our Gallery</h1>
             <div className="header-divider"></div>
             <p className="header-tagline">
-             Precision you can see. Integrity you can trust
+              Precision you can see. Integrity you can trust
             </p>
           </div>
         </header>
@@ -193,7 +163,7 @@ function Gallery() {
         <main className="gallery-content">
           <div className="content-inner">
             
-            {/* Filter Bar - Restricted to Photos and Videos */}
+            {/* Filter Bar */}
             <div className="filter-container">
               <span className="filter-label">View Mode:</span>
               <div className="filter-buttons">
@@ -201,59 +171,102 @@ function Gallery() {
                   className={`filter-btn ${filter === 'Photos' ? 'active' : ''}`}
                   onClick={() => setFilter('Photos')}
                 >
-                  Photos
+                  <i className="filter-icon"></i>
+                  Photos 
                 </button>
                 <button 
                   className={`filter-btn ${filter === 'Videos' ? 'active' : ''}`}
                   onClick={() => setFilter('Videos')}
                 >
-                  Videos
+                  <i className="filter-icon"></i>
+                  Videos 
                 </button>
               </div>
             </div>
 
-            {/* Gallery Grid Section */}
-            <section className="gallery-section">
-              <h2>
-                {filter === 'Photos' ? 'Industrial Imagery' : 'Process Videos'}
-              </h2>
-              <p>
-                {filter === 'Photos' 
-                  ? "High-resolution captures of our machinery, products, and facilities." 
-                  : "In-depth video tours and operational footage of our manufacturing processes."}
-              </p>
-              
-              <div className="gallery-grid">
-                {filteredItems.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className={`gallery-card ${item.type === 'video' ? 'video-card' : 'photo-card'}`}
-                    onClick={item.type === 'video' ? () => handleVideoClick(item) : () => handlePhotoClick(item)}
-                  >
-                    <div className="image-wrapper">
-                      <img src={item.type === 'photo' ? item.src : item.thumbnail} alt={item.title} />
-                      
-                      {/* Video Play Overlay */}
-                      {item.type === 'video' && (
-                        <div className="play-icon-overlay">
-                          <div className="play-button">▶</div>
-                        </div>
-                      )}
-
-                      <div className="image-overlay">
-                        <span className="category-tag">{item.category}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            {/* Error Message */}
+            {error && (
+              <div className="error-message">
+                <span className="error-icon"></span>
+                <p>{error}</p>
+                <button onClick={fetchGalleryData} className="retry-btn">
+                  Try Again
+                </button>
               </div>
+            )}
 
-              {filteredItems.length === 0 && (
-                <div className="no-results">
-                  <p>No {filter.toLowerCase()} available at the moment.</p>
+            {/* Loading State */}
+            {loading && (
+              <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <p>Loading gallery...</p>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!loading && !error && mediaData.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon"></div>
+                <h3>No Gallery Items Yet</h3>
+                <p>Check back later for photos and videos.</p>
+              </div>
+            )}
+
+            {/* Gallery Grid Section */}
+            {!loading && !error && mediaData.length > 0 && (
+              <section className="gallery-section">
+                <div className="section-header">
+                  <h2>
+                    {filter === 'Photos' ? ' Industrial Imagery' : ' Process Videos'}
+                  </h2>
                 </div>
-              )}
-            </section>
+                
+                {filteredItems.length > 0 ? (
+                  <div className="gallery-grid">
+                    {filteredItems.map((item) => (
+                      <div 
+                        key={item.id} 
+                        className={`gallery-card ${item.type === 'video' ? 'video-card' : 'photo-card'}`}
+                        onClick={item.type === 'video' ? () => handleVideoClick(item) : () => handlePhotoClick(item)}
+                      >
+                        <div className="image-wrapper">
+                          <img 
+                            src={item.type === 'photo' ? item.src : item.thumbnail} 
+                            alt={item.title}
+                            onError={handleImageError}
+                            loading="lazy"
+                          />
+                          
+                          {/* Video Play Overlay */}
+                          {item.type === 'video' && (
+                            <div className="play-icon-overlay">
+                              <div className="play-button">
+                                <span>▶</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Hover Overlay */}
+                          <div className="card-overlay">
+                            <div className="overlay-content">
+                              <span className="category-tag">{item.category}</span>
+                              <h4 className="card-title">{item.title}</h4>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-results">
+                    <div className="no-results-icon">
+                      {filter === 'Photos' ? '📷' : '🎬'}
+                    </div>
+                    <p>No {filter.toLowerCase()} available at the moment.</p>
+                  </div>
+                )}
+              </section>
+            )}
 
           </div>
         </main>
@@ -261,49 +274,82 @@ function Gallery() {
 
       {/* PHOTO LIGHTBOX */}
       {lightboxPhoto && (
-        <div className="photo-lightbox-overlay" onClick={closeLightbox}>
-          <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
-            {/* Navigation Arrows */}
-            <button className="nav-arrow left-arrow" onClick={() => navigatePhoto('prev')}>
-              ‹
-            </button>
-            <button className="nav-arrow right-arrow" onClick={() => navigatePhoto('next')}>
-              ›
+        <div className="lightbox-overlay" onClick={closeLightbox}>
+          <div className="lightbox-container" onClick={(e) => e.stopPropagation()}>
+            
+            {/* Close Button */}
+            <button className="lightbox-close" onClick={closeLightbox}>
+              ×
             </button>
 
+            {/* Navigation Arrows */}
+            {allPhotos.length > 1 && (
+              <>
+                <button 
+                  className="lightbox-nav lightbox-prev" 
+                  onClick={() => navigatePhoto('prev')}
+                >
+                  ‹
+                </button>
+                <button 
+                  className="lightbox-nav lightbox-next" 
+                  onClick={() => navigatePhoto('next')}
+                >
+                  ›
+                </button>
+              </>
+            )}
+
             {/* Image */}
-            <img 
-              src={lightboxPhoto.src} 
-              alt={lightboxPhoto.title}
-              className="lightbox-image"
-            />
+            <div className="lightbox-image-wrapper">
+              <img 
+                src={lightboxPhoto.src} 
+                alt={lightboxPhoto.title}
+                className="lightbox-image"
+                onError={handleImageError}
+              />
+            </div>
 
             {/* Caption */}
             <div className="lightbox-caption">
-              <h3>{lightboxPhoto.title}</h3>
-              <p>{lightboxPhoto.description}</p>
-              <span className="counter">{currentPhotoIndex + 1} / {allPhotos.length}</span>
+              <div className="caption-content">
+                <span className="caption-category">{lightboxPhoto.category}</span>
+                <h3>{lightboxPhoto.title}</h3>
+                <p>{lightboxPhoto.description}</p>
+              </div>
+              <div className="caption-counter">
+                {currentPhotoIndex + 1} / {allPhotos.length}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* VIDEO MODAL (Full Screen) */}
+      {/* VIDEO MODAL */}
       {selectedVideo && (
-        <div className="video-modal-overlay" onClick={closeVideoModal}>
-          <div className="video-modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close-btn" onClick={closeVideoModal}>×</button>
-            <div className="video-wrapper">
+        <div className="video-overlay" onClick={closeVideoModal}>
+          <div className="video-container" onClick={(e) => e.stopPropagation()}>
+            
+            {/* Close Button */}
+            <button className="video-close" onClick={closeVideoModal}>
+              ×
+            </button>
+            
+            {/* Video Player */}
+            <div className="video-player">
               <video 
                 src={selectedVideo.videoUrl} 
                 controls 
-                autoPlay 
-                className="full-screen-video"
+                autoPlay
+                playsInline
               >
                 Your browser does not support the video tag.
               </video>
             </div>
-            <div className="modal-info">
+            
+            {/* Video Info */}
+            <div className="video-info">
+              <span className="video-category">{selectedVideo.category}</span>
               <h3>{selectedVideo.title}</h3>
               <p>{selectedVideo.description}</p>
             </div>

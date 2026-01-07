@@ -266,7 +266,7 @@ const ProductDetail = () => {
               )}
             </div>
             
-            <div className="product-navigation">
+            {/* <div className="product-navigation">
               <button onClick={goToPrevProduct} disabled={currentProductIndex <= 0} className="nav-product-btn prev-product">
                 <span>Previous</span>
               </button>
@@ -274,7 +274,7 @@ const ProductDetail = () => {
               <button onClick={goToNextProduct} disabled={currentProductIndex >= products.length - 1} className="nav-product-btn next-product">
                 <span>Next</span>
               </button>
-            </div>
+            </div> */}
           </div>
           
           {/* Info Section */}

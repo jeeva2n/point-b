@@ -65,7 +65,7 @@
 }
 
 /* Product Navigation Controls */
-.product-navigation {
+/* .product-navigation {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -74,7 +74,7 @@
   padding: 10px;
   background-color: #f9fafb;
   border-radius: 8px;
-}
+} */
 
 .product-count {
   color: #6b7280;
@@ -565,10 +565,10 @@
     margin-bottom: 3px;
   }
 
-  .product-navigation {
+  /* .product-navigation {
     flex-direction: column;
     gap: 10px;
-  }
+  } */
 
   .product-count {
     order: -1;

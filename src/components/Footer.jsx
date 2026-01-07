@@ -10,11 +10,10 @@ function Footer() {
         {/* Navigation Links */}
         <nav className="footer-nav">
           <ul>
-            <li><Link to="/access-docs">Accessories & Docs</Link></li>
-            <li><Link to="/downloads-docs">Downloads & Docs</Link></li>
-            <li><Link to="/reach-out">Reach Out</Link></li>
-            <li><Link to="/blog">Blog</Link></li>
-            <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+            <li><Link to="/news">News</Link></li>
+            <li><Link to="/blog">Blogs</Link></li>
+            <li><Link to="/cvalues">Corporate Values</Link></li>
+            <li><Link to="/csra">CSR Activity</Link></li>
           </ul>
         </nav>
 

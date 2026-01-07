@@ -3,45 +3,40 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import ContactUs from './components/ContactUs';
+import Quickcontact from './pages/Quickcontact';
 import './App.css';
 import Cart from './pages/Cart';
 import Login from './pages/Login';
 import Account from './pages/Account';
-import AdminOrders from './components/AdminOrders';
+import AdminOrders from './components/admin/AdminOrders';
 import OrderDetail from './components/OrderDetail';
 import Gallery from './pages/Gallery';
+import ProductSortManager from './components/admin/ProductSortManager';
+import GalleryManager from './components/admin/GalleryManager';
+import BusinessPartners from './pages/BusinessPartners';
+import AboutUs from './pages/AboutUs';
+import NewsPage from './pages/NewsPage';
+import CorporateValues from './pages/CorporateValues';
+import CSRActivity from './pages/CSRActivity';
+import OurTeam from './pages/Ourteam';
 
 // Lazy-loaded pages
 const Home = lazy(() => import('./pages/Home'));
-const CalibrationBlocks = lazy(() => import('./pages/CalibrationBlocks'));
 const ProductCatalogue = lazy(() => import('./pages/ProductCatalogue'));
 const Company = lazy(() => import('./pages/Company'));
 const Career = lazy(() => import('./pages/Career'));
 const Blog = lazy(() => import('./pages/Blog'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
+const AdminLogin = lazy(() => import('./components/admin/AdminLogin'));
 const DownloadsDocs = lazy(() => import('./pages/DownloadsDocs'));
 const ReachOut = lazy(() => import('./pages/ReachOut'));
-const ReferenceStandards = lazy(() => import('./pages/ReferenceStandards'));
-const FlawedSpecimens = lazy(() => import('./pages/FlawedSpecimens'));
-const ValidationBlocks = lazy(() => import('./pages/ValidationBlocks'));
+
+// IMPORTANT: Update these import paths to point to pages/components/
+const ReferenceStandards = lazy(() => import('./pages/components/ReferenceStandards'));
+const FlawedSpecimens = lazy(() => import('./pages/components/FlawedSpecimens'));
+const ValidationBlocks = lazy(() => import('./pages/components/ValidationBlocks'));
 const ProductDetail = lazy(() => import('./components/ProductDetail'));
-
-// Commented out: Component not yet created
-// import ContactUs from './pages/ContactUs';
-
-// Commented out: Resource pages not yet created
-// import Gallery from './pages/resources/Gallery';
-// import Certifications from './pages/resources/Certifications';
-// import Downloads from './pages/resources/Downloads';
-// import Calculator from './pages/resources/Calculator';
-
-// Commented out: Company pages not yet created
-// import AboutUs from './pages/company/AboutUs';
-// import OurTeam from './pages/company/OurTeam';
-// import Facilities from './pages/company/Facilities';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -54,7 +49,7 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-// Loading component (optional - you can customize this)
+// Loading component
 function LoadingFallback() {
   return <div className="loading">Loading...</div>;
 }
@@ -72,10 +67,9 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/home" element={<Home />} />
 
-            {/* Product Detail Route - This handles all product types */}
+            {/* Product Detail Route */}
             <Route path="/product/:productId" element={<ProductDetail />} />
-              <Route path="/order/:orderId" element={<OrderDetail />} />
-            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/order/:orderId" element={<OrderDetail />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
 
             {/* ==========================================
@@ -126,26 +120,31 @@ function App() {
             <Route path="/validation-blocks/boiler-tube" element={<ValidationBlocks category="Boiler Tube PAUT Validation Blocks" />} />
 
             {/* ==========================================
-                RESOURCES ROUTES - Commented out
+                RESOURCES ROUTES
             ========================================== */}
             <Route path="/resources" element={<Gallery />} />
             <Route path="/resources/gallery" element={<Gallery />} />
-            {/* <Route path="/resources/certifications" element={<Certifications />} /> */}
-            {/* <Route path="/resources/downloads" element={<Downloads />} /> */}
-            {/* <Route path="/resources/calculator" element={<Calculator />} /> */}
 
             {/* ==========================================
-                COMPANY ROUTES - Commented out
+                COMPANY ROUTES
             ========================================== */}
             <Route path="/company" element={<Company />} />
-            {/* <Route path="/company/about" element={<AboutUs />} /> */}
-            {/* <Route path="/company/team" element={<OurTeam />} /> */}
-            {/* <Route path="/company/facilities" element={<Facilities />} /> */}
+            <Route path="/company/about" element={<AboutUs />} />
+            <Route path="/company/team" element={<OurTeam />} />
+            <Route path="/company/business-partners" element={<BusinessPartners />} />
+
+            {/* ==========================================
+                CONTACT
+            ========================================== */}
+         <Route path="/quickcontact" element={<Quickcontact />} />
+         <Route path="/news" element={<NewsPage />} />
+         <Route path="/blog" element={<Blog />} />
+         <Route path="/cvalues" element={<CorporateValues />} />
+         <Route path="/csra" element={<CSRActivity />} />
 
             {/* ==========================================
                 OTHER PAGES
             ========================================== */}
-            {/* <Route path="/contact-us" element={<ContactUs />} /> */}
             <Route path="/product-catalogue" element={<ProductCatalogue />} />
             <Route path="/career" element={<Career />} />
             <Route path="/blog" element={<Blog />} />
@@ -153,12 +152,19 @@ function App() {
             <Route path="/downloads-docs" element={<DownloadsDocs />} />
             <Route path="/reach-out" element={<ReachOut />} />
             <Route path="/cart" element={<Cart />} />
+
+            {/* ==========================================
+                USER ROUTES
+            ========================================== */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/account" element={<Account />} />
+
             {/* ==========================================
                 ADMIN ROUTES
             ========================================== */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
- <Route path="/login" element={<Login />} />
+
             <Route
               path="/admin/dashboard"
               element={
@@ -167,7 +173,25 @@ function App() {
                 </ProtectedRoute>
               }
             />
-  <Route path="/account" element={<Account />} />
+
+            <Route
+              path="/admin/sort-products"
+              element={
+                <ProtectedRoute>
+                  <ProductSortManager backendUrl="http://192.168.1.9:5001" />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/gallery"
+              element={
+                <ProtectedRoute>
+                  <GalleryManager backendUrl="http://192.168.1.9:5001" />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

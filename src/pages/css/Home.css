@@ -14,7 +14,6 @@
   justify-content: center;
   align-items: center;
   position: relative;
-  background: #ffffff;
   overflow: hidden;
   flex: 1 0 auto;
   padding: 0;
@@ -105,7 +104,6 @@
   object-fit: cover;
   transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease, filter 0.5s ease;
   will-change: transform;
-  border: 2px solid rgba(255, 255, 255, 0.3);
   box-sizing: border-box;
   filter: grayscale(100%);
 }
