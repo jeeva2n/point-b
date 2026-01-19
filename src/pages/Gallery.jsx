@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { API_URL } from './../config/api';
 import './css/Gallery.css';
 
 function Gallery() {
@@ -13,17 +14,14 @@ function Gallery() {
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
-  // Backend URL
-  const backendUrl = 'http://192.168.1.9:5001';
-
   // Helper function to get full URL for images/videos
   const getFullUrl = useCallback((url) => {
     if (!url) return null;
     if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) {
       return url;
     }
-    return `${backendUrl}${url.startsWith('/') ? '' : '/'}${url}`;
-  }, [backendUrl]);
+    return `${API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  }, []);
 
   // Fetch gallery data from backend
   const fetchGalleryData = useCallback(async () => {
@@ -31,7 +29,7 @@ function Gallery() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`${backendUrl}/api/gallery`);
+      const response = await fetch(`${API_URL}/api/gallery`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -65,7 +63,7 @@ function Gallery() {
     } finally {
       setLoading(false);
     }
-  }, [backendUrl, getFullUrl]);
+  }, [getFullUrl]);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -334,7 +332,7 @@ function Gallery() {
             <button className="video-close" onClick={closeVideoModal}>
               ×
             </button>
-            
+    
             {/* Video Player */}
             <div className="video-player">
               <video 

@@ -1,4 +1,3 @@
-// Footer.jsx
 import { FaLinkedin, FaWhatsapp, FaFacebookF } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import "./Footer.css";
@@ -9,11 +8,11 @@ function Footer() {
       <div className="footer-container">
         {/* Navigation Links */}
         <nav className="footer-nav">
-          <ul>
-            <li><Link to="/news">News</Link></li>
-            <li><Link to="/blog">Blogs</Link></li>
-            <li><Link to="/cvalues">Corporate Values</Link></li>
-            <li><Link to="/csra">CSR Activity</Link></li>
+          <ul className="footer-nav-list">
+            <li className="footer-nav-item"><Link to="/news">News</Link></li>
+            <li className="footer-nav-item"><Link to="/blog">Blogs</Link></li>
+            <li className="footer-nav-item"><Link to="/cvalues">Corporate Values</Link></li>
+            <li className="footer-nav-item"><Link to="/csra">CSR Activity</Link></li>
           </ul>
         </nav>
 

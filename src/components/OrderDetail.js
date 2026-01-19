@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_URL } from '../config/api';
 import '../pages/css/Cart.css';
-
-
-const getBackendUrl = () => {
-  return localStorage.getItem('backend_url') || 'http://192.168.1.9:5001';
-};
 
 const OrderDetail = () => {
   const { orderId } = useParams();
@@ -13,13 +9,12 @@ const OrderDetail = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const backendUrl = getBackendUrl();
 
   useEffect(() => {
     const fetchOrder = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${backendUrl}/api/orders/${orderId}`, {
+        const response = await fetch(`${API_URL}/api/orders/${orderId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -40,7 +35,14 @@ const OrderDetail = () => {
     };
 
     if (orderId) fetchOrder();
-  }, [orderId, backendUrl]);
+  }, [orderId]);
+
+  // Helper function to get image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/images/placeholder.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${API_URL}${imagePath}`;
+  };
 
   if (loading) {
     return (
@@ -100,7 +102,7 @@ const OrderDetail = () => {
             <div key={item.id} className="cart-item">
               <div className="cart-item-image">
                 <img 
-                  src={item.image_url ? `${backendUrl}${item.image_url}` : '/images/placeholder.jpg'} 
+                  src={getImageUrl(item.image_url)} 
                   alt={item.product_name}
                   onError={(e) => e.target.src = '/images/placeholder.jpg'}
                 />

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
+import { API_URL } from './config/api';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Quickcontact from './pages/Quickcontact';
@@ -18,19 +19,14 @@ import AboutUs from './pages/AboutUs';
 import NewsPage from './pages/NewsPage';
 import CorporateValues from './pages/CorporateValues';
 import CSRActivity from './pages/CSRActivity';
-import OurTeam from './pages/Ourteam';
+import OurTeam from './pages/OurTeam';
 
 // Lazy-loaded pages
 const Home = lazy(() => import('./pages/Home'));
-const ProductCatalogue = lazy(() => import('./pages/ProductCatalogue'));
-const Company = lazy(() => import('./pages/Company'));
-const Career = lazy(() => import('./pages/Career'));
 const Blog = lazy(() => import('./pages/Blog'));
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
 const AdminLogin = lazy(() => import('./components/admin/AdminLogin'));
-const DownloadsDocs = lazy(() => import('./pages/DownloadsDocs'));
-const ReachOut = lazy(() => import('./pages/ReachOut'));
+
 
 // IMPORTANT: Update these import paths to point to pages/components/
 const ReferenceStandards = lazy(() => import('./pages/components/ReferenceStandards'));
@@ -128,7 +124,7 @@ function App() {
             {/* ==========================================
                 COMPANY ROUTES
             ========================================== */}
-            <Route path="/company" element={<Company />} />
+            {/* <Route path="/company" element={<Company />} /> */}
             <Route path="/company/about" element={<AboutUs />} />
             <Route path="/company/team" element={<OurTeam />} />
             <Route path="/company/business-partners" element={<BusinessPartners />} />
@@ -145,13 +141,14 @@ function App() {
             {/* ==========================================
                 OTHER PAGES
             ========================================== */}
-            <Route path="/product-catalogue" element={<ProductCatalogue />} />
-            <Route path="/career" element={<Career />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            {/* <Route path="/product-catalogue" element={<ProductCatalogue />} /> */}
+            {/* <Route path="/career" element={<Career />} /> */}
+            {/* <Route path="/blog" element={<Blog />} /> */}
+            {/* <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/downloads-docs" element={<DownloadsDocs />} />
-            <Route path="/reach-out" element={<ReachOut />} />
+            <Route path="/reach-out" element={<ReachOut />} /> */}
             <Route path="/cart" element={<Cart />} />
+            
 
             {/* ==========================================
                 USER ROUTES
@@ -178,7 +175,7 @@ function App() {
               path="/admin/sort-products"
               element={
                 <ProtectedRoute>
-                  <ProductSortManager backendUrl="http://192.168.1.9:5001" />
+                  <ProductSortManager backendUrl={API_URL} />
                 </ProtectedRoute>
               }
             />
@@ -187,7 +184,7 @@ function App() {
               path="/admin/gallery"
               element={
                 <ProtectedRoute>
-                  <GalleryManager backendUrl="http://192.168.1.9:5001" />
+                  <GalleryManager backendUrl={API_URL} />
                 </ProtectedRoute>
               }
             />

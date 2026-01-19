@@ -408,10 +408,10 @@ const GalleryManager = ({ backendUrl }) => {
                   </span>
                 </div>
                 <div className="gm-item-actions">
-                  <button onClick={() => setEditingItem(item)} title="Edit">
+                  <button onClick={() => setEditingItem(item)} title="Edit">edit
                     <i className="fas fa-edit"></i>
                   </button>
-                  <button onClick={() => handleDelete(item.id)} title="Delete" className="gm-delete">
+                  <button onClick={() => handleDelete(item.id)} title="Delete" className="gm-delete">delete
                     <i className="fas fa-trash"></i>
                   </button>
                 </div>

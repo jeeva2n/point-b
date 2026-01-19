@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from './../config/api';
 import './css/Login.css';
-
-const getBackendUrl = () => {
-  return localStorage.getItem('backend_url') || 'http://192.168.1.9:5001';
-};
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -13,7 +10,6 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const backendUrl = getBackendUrl();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -28,7 +24,7 @@ const Login = () => {
     setError('');
     
     try {
-      const response = await fetch(`${backendUrl}/api/auth/send-otp`, {
+      const response = await fetch(`${API_URL}/api/auth/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, cartId: localStorage.getItem('cartId') }),
@@ -37,7 +33,7 @@ const Login = () => {
       if (data.success) setStep('otp');
       else setError(data.message || 'Failed to send OTP');
     } catch (err) {
-      setError('Connection error. Is the backend running at port 5001?');
+      setError('Connection error. Please check your internet connection.');
     } finally { setLoading(false); }
   };
 
@@ -47,7 +43,7 @@ const Login = () => {
     setLoading(true);
     
     try {
-      const response = await fetch(`${backendUrl}/api/auth/verify-otp`, {
+      const response = await fetch(`${API_URL}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

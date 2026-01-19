@@ -1,12 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from "react-router-dom";
+import { API_URL, ENDPOINTS, getImageUrl, apiCall } from '../config/api';
 import './ProductDetail.css';
-
-// --- Backend Helper ---
-// Updated to port 5001 as per your running backend
-const getBackendUrl = () => {
-  return localStorage.getItem("backend_url") || "http://192.168.1.9:5001";
-};
 
 const ProductDetail = () => {
   // --- State & Hooks ---
@@ -21,7 +16,6 @@ const ProductDetail = () => {
   
   const { productId } = useParams();
   const navigate = useNavigate();
-  const backendUrl = getBackendUrl();
 
   // --- Show Notification ---
   const showNotification = (message, type = 'success') => {
@@ -35,11 +29,12 @@ const ProductDetail = () => {
   const fetchProductDetails = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${backendUrl}/api/products/${productId}`);
-      const data = await response.json();
+      const result = await apiCall(ENDPOINTS.PRODUCT_BY_ID(productId), {
+        method: 'GET',
+      });
 
-      if (response.ok && data.success) {
-        setProduct(data.product);
+      if (result.success && result.data?.success) {
+        setProduct(result.data.product);
       } else {
         setProduct(null);
       }
@@ -49,27 +44,28 @@ const ProductDetail = () => {
     } finally {
       setLoading(false);
     }
-  }, [backendUrl, productId]);
+  }, [productId]);
 
   const fetchAllProducts = useCallback(async () => {
     try {
-      const response = await fetch(`${backendUrl}/api/products?limit=100`);
-      const data = await response.json();
+      const result = await apiCall(`${ENDPOINTS.PRODUCTS}?limit=100`, {
+        method: 'GET',
+      });
 
-      if (response.ok && data.success) {
-        setProducts(data.products || []);
+      if (result.success && result.data?.success) {
+        setProducts(result.data.products || []);
       }
     } catch (error) {
       console.error("Error fetching all products:", error);
     }
-  }, [backendUrl]);
+  }, []);
 
   useEffect(() => {
     fetchProductDetails();
     fetchAllProducts();
   }, [fetchProductDetails, fetchAllProducts]);
 
-  // Update current product index for navigation when products or productId changes
+  // Update current product index for navigation
   useEffect(() => {
     if (products.length > 0 && productId) {
       const index = products.findIndex(p => p.id.toString() === productId.toString());
@@ -104,9 +100,8 @@ const ProductDetail = () => {
       setActionLoading(true);
       const cartId = localStorage.getItem('cartId') || null;
       
-      const response = await fetch(`${backendUrl}/api/cart`, {
+      const result = await apiCall(ENDPOINTS.CART, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cartId,
           productId: productObj.id,
@@ -114,10 +109,8 @@ const ProductDetail = () => {
         }),
       });
       
-      const data = await response.json();
-      
-      if (data.success) {
-        if (data.cartId) localStorage.setItem('cartId', data.cartId);
+      if (result.success && result.data?.success) {
+        if (result.data.cartId) localStorage.setItem('cartId', result.data.cartId);
         showNotification(`${productObj.name} added to cart!`, 'success');
         window.dispatchEvent(new CustomEvent('cartUpdated'));
       } else {
@@ -135,9 +128,8 @@ const ProductDetail = () => {
       setActionLoading(true);
       const quoteId = localStorage.getItem('quoteId') || null;
       
-      const response = await fetch(`${backendUrl}/api/quote-requests`, {
+      const result = await apiCall(ENDPOINTS.QUOTES, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           quoteId,
           productId: productObj.id,
@@ -145,10 +137,8 @@ const ProductDetail = () => {
         }),
       });
       
-      const data = await response.json();
-      
-      if (data.success) {
-        if (data.quoteId) localStorage.setItem('quoteId', data.quoteId);
+      if (result.success && result.data?.success) {
+        if (result.data.quoteId) localStorage.setItem('quoteId', result.data.quoteId);
         showNotification(`${productObj.name} added to quote request!`, 'success');
         window.dispatchEvent(new CustomEvent('quoteUpdated'));
       } else {
@@ -162,12 +152,6 @@ const ProductDetail = () => {
   };
 
   // --- Data Helpers ---
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return "/images/placeholder.jpg";
-    if (imagePath.startsWith("http")) return imagePath;
-    return `${backendUrl}${imagePath}`;
-  };
-
   const getProductImages = () => {
     if (!product) return [];
     if (product.images && product.images.length > 0) {
@@ -213,13 +197,19 @@ const ProductDetail = () => {
     );
   };
 
-  if (loading) return <div className="main-container loading-state">Loading product details...</div>;
-  if (!product) return (
-    <div className="main-container error-state">
-      <h2>Product not found</h2>
-      <button onClick={() => navigate(-1)} className="contact-button">Go Back</button>
-    </div>
-  );
+  // --- Render ---
+  if (loading) {
+    return <div className="main-container loading-state">Loading product details...</div>;
+  }
+  
+  if (!product) {
+    return (
+      <div className="main-container error-state">
+        <h2>Product not found</h2>
+        <button onClick={() => navigate(-1)} className="contact-button">Go Back</button>
+      </div>
+    );
+  }
 
   const accordionItems = [
     { 
@@ -236,7 +226,12 @@ const ProductDetail = () => {
 
   return (
     <div className="main-container">
-      {notification.show && <div className={`notification ${notification.type}`}>{notification.message}</div>}
+      {/* Notification */}
+      {notification.show && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
 
       <div className="carousel-container">
         <div className="carousel-content">
@@ -256,25 +251,25 @@ const ProductDetail = () => {
               
               {productImages.length > 1 && (
                 <>
-                  <button className="nav-button prev" onClick={() => setCurrentSlide((currentSlide - 1 + productImages.length) % productImages.length)}>
-                    <svg width="50" height="50" viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7" stroke="#FF4B55" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <button 
+                    className="nav-button prev" 
+                    onClick={() => setCurrentSlide((currentSlide - 1 + productImages.length) % productImages.length)}
+                  >
+                    <svg width="50" height="50" viewBox="0 0 24 24" fill="none">
+                      <path d="M15 19l-7-7 7-7" stroke="#FF4B55" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
                   </button>
-                  <button className="nav-button next" onClick={() => setCurrentSlide((currentSlide + 1) % productImages.length)}>
-                    <svg width="50" height="50" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="#FF4B55" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <button 
+                    className="nav-button next" 
+                    onClick={() => setCurrentSlide((currentSlide + 1) % productImages.length)}
+                  >
+                    <svg width="50" height="50" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 5l7 7-7 7" stroke="#FF4B55" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
                   </button>
                 </>
               )}
             </div>
-            
-            {/* <div className="product-navigation">
-              <button onClick={goToPrevProduct} disabled={currentProductIndex <= 0} className="nav-product-btn prev-product">
-                <span>Previous</span>
-              </button>
-              <div className="product-count">Product {currentProductIndex + 1} of {products.length}</div>
-              <button onClick={goToNextProduct} disabled={currentProductIndex >= products.length - 1} className="nav-product-btn next-product">
-                <span>Next</span>
-              </button>
-            </div> */}
           </div>
           
           {/* Info Section */}
@@ -286,18 +281,32 @@ const ProductDetail = () => {
             <div className="features-list">
               {getHighlights().map((highlight, index) => (
                 <div key={index} className="feature-item">
-                  <div className="check-icon"><svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M1 5L5 9L13 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
+                  <div className="check-icon">
+                    <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
+                      <path d="M1 5L5 9L13 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
                   <p>{highlight}</p>
                 </div>
               ))}
             </div>
             
             <div className="action-buttons">
-              <button className="catalogue-button" onClick={() => navigate(-1)}><span>Catalogue</span></button>
-              <button className="cart-button" onClick={() => addToCart(product)} disabled={actionLoading}>
+              <button className="catalogue-button" onClick={() => navigate(-1)}>
+                <span>Catalogue</span>
+              </button>
+              <button 
+                className="cart-button" 
+                onClick={() => addToCart(product)} 
+                disabled={actionLoading}
+              >
                 <span>{actionLoading ? 'Adding...' : 'Add to Quote'}</span>
               </button>
-              <button className="quote-button" onClick={() => addToQuoteRequest(product)} disabled={actionLoading}>
+              <button 
+                className="quote-button" 
+                onClick={() => addToQuoteRequest(product)} 
+                disabled={actionLoading}
+              >
                 <span>{actionLoading ? 'Requesting...' : 'Request Quote'}</span>
               </button>
             </div>
@@ -305,6 +314,7 @@ const ProductDetail = () => {
         </div>
       </div>
 
+      {/* Accordion Section */}
       <div className="accordion-section">
         {accordionItems.map((item) => (
           <div key={item.id} className="accordion-item">
@@ -312,7 +322,9 @@ const ProductDetail = () => {
               <span className="accordion-icon">{expandedAccordion === item.id ? '−' : '+'}</span>
               <span className="accordion-title">{item.title}</span>
             </button>
-            {expandedAccordion === item.id && <div className="accordion-content">{item.content}</div>}
+            {expandedAccordion === item.id && (
+              <div className="accordion-content">{item.content}</div>
+            )}
           </div>
         ))}
       </div>

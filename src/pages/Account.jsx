@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from './../config/api';
 import './css/Account.css';
-
-const getBackendUrl = () => {
-  return localStorage.getItem('backend_url') || 'http://192.168.1.9:5001';
-};
 
 const Account = () => {
   const [user, setUser] = useState(null);
@@ -14,7 +11,6 @@ const Account = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const backendUrl = getBackendUrl();
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -33,7 +29,7 @@ const Account = () => {
         return;
       }
 
-      const response = await fetch(`${backendUrl}/api/auth/profile`, {
+      const response = await fetch(`${API_URL}/api/auth/profile`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       
@@ -56,7 +52,7 @@ const Account = () => {
     } finally {
       setLoading(false);
     }
-  }, [backendUrl, handleLogout]);
+  }, [handleLogout]);
 
   useEffect(() => {
     fetchUserData();

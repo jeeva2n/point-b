@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config/api';
 import './ProductModal.css';
 
 function ProductModal({ productId, onClose }) {
@@ -13,7 +14,7 @@ function ProductModal({ productId, onClose }) {
 
   const fetchProductDetails = async () => {
     try {
-      const response = await fetch(`http://192.168.1.9:5001/api/products/${productId}`);
+      const response = await fetch(`${API_URL}/api/products/${productId}`);
       const data = await response.json();
       console.log('Product details:', data); // Debug log
       
@@ -25,6 +26,13 @@ function ProductModal({ productId, onClose }) {
       console.error('Error fetching product details:', error);
       setLoading(false);
     }
+  };
+
+  // Helper function to get image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/placeholder-image.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${API_URL}${imagePath}`;
   };
 
   // Close modal when clicking outside
@@ -74,7 +82,7 @@ function ProductModal({ productId, onClose }) {
         <div className="modal-body">
           <div className="modal-image">
             <img 
-              src={`http://192.168.1.6:5000${product.image_url}`} 
+              src={getImageUrl(product.image_url)} 
               alt={product.name}
               onError={(e) => {
                 e.target.src = '/placeholder-image.jpg';
@@ -106,7 +114,7 @@ function ProductModal({ productId, onClose }) {
                 </div>
               )} */}
               
-              <div className="product-status">
+                         <div className="product-status">
                 <span className={`status-badge ${product.in_stock ? 'in-stock' : 'out-of-stock'}`}>
                   {product.in_stock ? 'In Stock' : 'Out of Stock'}
                 </span>

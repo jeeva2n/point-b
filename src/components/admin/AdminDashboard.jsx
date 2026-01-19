@@ -1,6 +1,7 @@
 // AdminDashboard.js
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL, ENDPOINTS, getImageUrl as getImageUrlFromConfig, apiCall } from '../../config/api';
 import './AdminDashboard.css';
 
 // Define your product type categories
@@ -179,7 +180,6 @@ function AdminDashboard() {
 
   const [formLoading, setFormLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
-  const [backendUrl] = useState("http://192.168.1.9:5001");
   const [imagePreview, setImagePreview] = useState([]);
   const [editImagePreview, setEditImagePreview] = useState({
     existing: [],
@@ -223,7 +223,7 @@ function AdminDashboard() {
 
       const token = localStorage.getItem("admin_token");
 
-      const res = await fetch(`${backendUrl}/api/products?limit=1000`, {
+      const res = await fetch(`${API_URL}/api/products?limit=1000`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -242,7 +242,7 @@ function AdminDashboard() {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [backendUrl]);
+  }, []);
 
   // Initial data loading
   useEffect(() => {
@@ -684,7 +684,6 @@ function AdminDashboard() {
   }, [editFormData.id, editFormData.specifications, editFormData.features]);
 
   // Handle form submission for new product
-  // Handle form submission for new product
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormLoading(true);
@@ -742,7 +741,7 @@ function AdminDashboard() {
       console.log("Images:", formData.images?.length || 0);
 
       // Send request
-      const res = await fetch(`${backendUrl}/api/products`, {
+      const res = await fetch(`${API_URL}/api/products`, {
         method: "POST",
         headers: {
           'Authorization': `Bearer ${token}`
@@ -818,7 +817,7 @@ function AdminDashboard() {
 
       // Send request
       console.log(`Updating product ${editFormData.id}`);
-      const res = await fetch(`${backendUrl}/api/products/${editFormData.id}`, {
+      const res = await fetch(`${API_URL}/api/products/${editFormData.id}`, {
         method: "PUT",
         headers: {
           'Authorization': `Bearer ${token}`
@@ -913,7 +912,7 @@ function AdminDashboard() {
       // loading state is handled by the UI refreshing
       const token = localStorage.getItem("admin_token");
 
-      const res = await fetch(`${backendUrl}/api/products/${id}`, {
+      const res = await fetch(`${API_URL}/api/products/${id}`, {
         method: "DELETE",
         headers: {
           'Authorization': `Bearer ${token}`
@@ -951,7 +950,7 @@ function AdminDashboard() {
       // Just fetch the details for the modal
       const token = localStorage.getItem("admin_token");
 
-      const res = await fetch(`${backendUrl}/api/products/${id}`, {
+      const res = await fetch(`${API_URL}/api/products/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1113,9 +1112,9 @@ function AdminDashboard() {
       return path;
     }
 
-    // It's a relative path, prepend backend URL
+    // It's a relative path, prepend backend URL from config
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    return `${backendUrl}${cleanPath}`;
+    return `${API_URL}${cleanPath}`;
   };
 
   // Safe image error handler
@@ -1196,19 +1195,19 @@ function AdminDashboard() {
           <div className="admin-nav-buttons">
             <button
               onClick={() => navigate('/admin/orders')}
-              className="nav-button orders"
+              className="nav-buttons orders"
             >
               <i className="fas fa-shopping-cart"></i> Orders
             </button> <br />
             <button
               onClick={() => navigate('/admin/sort-products')}
-              className="nav-button sort"
+              className="nav-buttons sort"
             >
               <i className="fas fa-sort-amount-down"></i> Sort Products
             </button> <br />
             <button
               onClick={() => navigate('/admin/gallery')}
-              className="nav-button gallery"
+              className="nav-buttons gallery"
             >
               <i className="fas fa-images"></i> Gallery
             </button>
@@ -1837,13 +1836,13 @@ function AdminDashboard() {
                             <button
                               onClick={() => viewProduct(product.id)}
                               className="view-button"
-                            >
+                            >EDIT
                               <i className="fas fa-eye"></i>
                             </button>
                             <button
                               onClick={() => handleDelete(product.id)}
                               className="delete-button"
-                            >
+                            >DELETE
                               <i className="fas fa-trash-alt"></i>
                             </button>
                           </div>
@@ -2198,7 +2197,7 @@ function AdminDashboard() {
                             ))}
                           </div>
 
-                          {/* Custom Material */}
+                                                   {/* Custom Material */}
                           <div className="custom-material-input">
                             <input
                               type="text"

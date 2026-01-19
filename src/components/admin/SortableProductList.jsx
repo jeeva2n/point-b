@@ -255,7 +255,7 @@ const SortableProductList = ({
                                   onClick={() => onEdit && onEdit(product.id)} 
                                   className="action-btn view-btn"
                                   title="View/Edit"
-                                >
+                                >EDIT
                                   <i className="fas fa-eye"></i>
                                 </button>
                                 <button 
@@ -266,7 +266,7 @@ const SortableProductList = ({
                                   }} 
                                   className="action-btn delete-btn"
                                   title="Delete"
-                                >
+                                >DELETE
                                   <i className="fas fa-trash-alt"></i>
                                 </button>
                               </div>

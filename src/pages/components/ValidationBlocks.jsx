@@ -32,7 +32,7 @@ function ValidationBlocks({ category: initialCategory }) {
       pageDescriptions={pageDescriptions}
       badgeText="EQUIPMENT VALIDATION"
       initialCategory={initialCategory}
-      config={{ BACKEND_URL: "http://192.168.1.9:5001" }}
+      // No need to pass config - it will use API_URL from environment
     />
   );
 }

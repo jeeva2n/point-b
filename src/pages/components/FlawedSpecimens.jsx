@@ -69,7 +69,7 @@ function FlawedSpecimens({ category: initialCategory }) {
       pageDescriptions={pageDescriptions}
       badgeText="NDT TRAINING & VALIDATION"
       initialCategory={initialCategory}
-      config={{ BACKEND_URL: "http://192.168.1.9:5001" }}
+      // No need to pass config - it will use API_URL from environment
     />
   );
 }

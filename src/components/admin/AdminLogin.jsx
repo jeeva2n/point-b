@@ -1,38 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL, ENDPOINTS, apiCall } from "../../config/api";
 import "./AdminLogin.css";
 
 function AdminLogin() {
   const navigate = useNavigate();
-// In AdminLogin.js, change this line:
-const [backendUrl, setBackendUrl] = useState("http://192.168.1.9:5001");
   const [serverStatus, setServerStatus] = useState("checking");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [credentials, setCredentials] = useState({
-    username: "admin",
-    password: "admin123",
+    username: "",
+    password: "",
   });
 
   // Check server status on component mount
   useEffect(() => {
     checkServerStatus();
-  }, [backendUrl]);
+  }, []);
 
   const checkServerStatus = async () => {
     setServerStatus("checking");
     try {
-      const response = await fetch(`${backendUrl}/api/health`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-      
-      if (response.ok) {
-        setServerStatus("connected");
-      } else {
-        setServerStatus("error");
-      }
+      const result = await apiCall(ENDPOINTS.HEALTH, { method: "GET" });
+      setServerStatus(result.success ? "connected" : "error");
     } catch (error) {
       setServerStatus("error");
     }
@@ -44,27 +35,24 @@ const [backendUrl, setBackendUrl] = useState("http://192.168.1.9:5001");
     setMessage("");
 
     try {
-      const response = await fetch(`${backendUrl}/api/admin/login`, {
+      const result = await apiCall(ENDPOINTS.ADMIN_LOGIN, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        localStorage.setItem("admin_token", data.token);
-        localStorage.setItem("admin_data", JSON.stringify(data.admin));
+      if (result.success && result.data?.success) {
+        localStorage.setItem("admin_token", result.data.token);
+        localStorage.setItem("admin_data", JSON.stringify(result.data.admin));
 
         setMessage("✅ Login successful! Redirecting...");
         setTimeout(() => {
           navigate("/admin/dashboard");
         }, 1000);
       } else {
-        setMessage(`❌ ${data.message || "Login failed"}`);
+        setMessage(`❌ ${result.data?.message || "Login failed"}`);
       }
     } catch (err) {
-      setMessage(`❌ Cannot connect to backend at ${backendUrl}`);
+      setMessage(`❌ Cannot connect to backend`);
     } finally {
       setLoading(false);
     }
@@ -72,9 +60,14 @@ const [backendUrl, setBackendUrl] = useState("http://192.168.1.9:5001");
 
   return (
     <div className="admin-login-page">
-      {/* Main Content */}
+      {/* Server Status Indicator */}
+      <div className={`server-status ${serverStatus}`}>
+        {serverStatus === "checking" && "🔄 Checking server..."}
+        {serverStatus === "connected" && "🟢 Server Connected"}
+        {serverStatus === "error" && "🔴 Server Offline"}
+      </div>
+
       <div className="login-main-container">
-        
         {/* Left Section - NDT Information */}
         <div className="ndt-info-section">
           <div className="ndt-brand">
@@ -107,6 +100,20 @@ const [backendUrl, setBackendUrl] = useState("http://192.168.1.9:5001");
               </div>
             </div>
           </div>
+
+          {/* Environment indicator - only in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="env-indicator" style={{ 
+              marginTop: '20px', 
+              padding: '10px', 
+              background: '#f0f0f0', 
+              borderRadius: '5px',
+              fontSize: '12px' 
+            }}>
+              <strong>Dev Mode</strong><br />
+              API: {API_URL}
+            </div>
+          )}
         </div>
 
         {/* Right Section - Login Form */}
@@ -117,7 +124,6 @@ const [backendUrl, setBackendUrl] = useState("http://192.168.1.9:5001");
               <p className="login-subtitle">Enter your credentials to access the control panel</p>
             </div>
 
-            {/* Error/Success Message */}
             {message && (
               <div className={`login-message ${message.includes("✅") ? "success" : "error"}`}>
                 <div className="message-icon">
@@ -127,9 +133,7 @@ const [backendUrl, setBackendUrl] = useState("http://192.168.1.9:5001");
               </div>
             )}
 
-            {/* Login Form */}
             <form className="login-form" onSubmit={handleLogin}>
-              {/* Username Field */}
               <div className="form-field">
                 <label className="field-label">Username</label>
                 <div className="input-container">
@@ -139,12 +143,11 @@ const [backendUrl, setBackendUrl] = useState("http://192.168.1.9:5001");
                     value={credentials.username}
                     onChange={(e) => setCredentials({...credentials, username: e.target.value})}
                     placeholder="Enter username"
+                    required
                   />
                 </div>
-                <div className="demo-username">Admin</div>
               </div>
 
-              {/* Password Field */}
               <div className="form-field">
                 <label className="field-label">Password</label>
                 <div className="input-container">
@@ -154,6 +157,7 @@ const [backendUrl, setBackendUrl] = useState("http://192.168.1.9:5001");
                     value={credentials.password}
                     onChange={(e) => setCredentials({...credentials, password: e.target.value})}
                     placeholder="Enter password"
+                    required
                   />
                   <button
                     type="button"
@@ -163,10 +167,8 @@ const [backendUrl, setBackendUrl] = useState("http://192.168.1.9:5001");
                     {showPassword ? "🙈" : "👁️"}
                   </button>
                 </div>
-                <div className="demo-password">**********</div>
               </div>
 
-              {/* Remember Me & Forgot Password */}
               <div className="form-options">
                 <label className="checkbox-label">
                   <input type="checkbox" className="checkbox-input" />
@@ -175,11 +177,10 @@ const [backendUrl, setBackendUrl] = useState("http://192.168.1.9:5001");
                 </label>
               </div>
 
-              {/* Sign In Button */}
               <button
                 type="submit"
                 className={`signin-button ${loading ? 'loading' : ''}`}
-                disabled={loading}
+                disabled={loading || serverStatus === 'error'}
               >
                 {loading ? (
                   <>

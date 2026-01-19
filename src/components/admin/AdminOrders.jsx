@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from '../../config/api';
 import './AdminOrders.css';
-
-const getBackendUrl = () => {
-  return localStorage.getItem('backend_url') || 'http://192.168.1.9:5001';
-};
 
 const AdminOrders = () => {
   const navigate = useNavigate();
-  const backendUrl = getBackendUrl();
   
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +25,7 @@ const AdminOrders = () => {
       const token = localStorage.getItem("admin_token");
       if (!token) { navigate('/admin/login'); return; }
 
-      const res = await fetch(`${backendUrl}/api/orders/admin/all`, {
+      const res = await fetch(`${API_URL}/api/orders/admin/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -49,7 +45,7 @@ const AdminOrders = () => {
   const fetchEmailHistory = async (orderId) => {
     try {
       const token = localStorage.getItem("admin_token");
-      const res = await fetch(`${backendUrl}/api/orders/admin/${orderId}/email-history`, {
+      const res = await fetch(`${API_URL}/api/orders/admin/${orderId}/email-history`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -63,7 +59,7 @@ const AdminOrders = () => {
   const handleViewDetails = async (id) => {
     try {
       const token = localStorage.getItem("admin_token");
-      const res = await fetch(`${backendUrl}/api/orders/admin/${id}/details`, {
+      const res = await fetch(`${API_URL}/api/orders/admin/${id}/details`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -84,7 +80,7 @@ const AdminOrders = () => {
     setUpdatingStatus(true);
     try {
       const token = localStorage.getItem("admin_token");
-      const res = await fetch(`${backendUrl}/api/orders/admin/${selectedOrder.id}/status`, {
+      const res = await fetch(`${API_URL}/api/orders/admin/${selectedOrder.id}/status`, {
         method: "PUT",
         headers: {
           'Content-Type': 'application/json',
@@ -119,7 +115,7 @@ const AdminOrders = () => {
     setSendingEmail(true);
     try {
       const token = localStorage.getItem("admin_token");
-      const res = await fetch(`${backendUrl}/api/orders/admin/${selectedOrder.id}/email`, {
+      const res = await fetch(`${API_URL}/api/orders/admin/${selectedOrder.id}/email`, {
         method: "POST",
         headers: {
           'Content-Type': 'application/json',
@@ -147,8 +143,14 @@ const AdminOrders = () => {
 
   const formatPrice = (p) => `₹${parseFloat(p || 0).toFixed(2)}`;
 
-  return (
+  // Helper function to get image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/placeholder-image.png';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${API_URL}${imagePath}`;
+  };
 
+  return (
     <div className="admin-dashboard">
       <div className="dashboard-header">
         <div className="header-left">
@@ -234,7 +236,7 @@ const AdminOrders = () => {
                   <div style={{maxHeight: '300px', overflowY: 'auto'}}>
                     {selectedOrder.items && selectedOrder.items.map((item, idx) => (
                       <div key={idx} style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px', borderBottom:'1px solid #f9f9f9', paddingBottom:'10px'}}>
-                        <div style={{display:'flex', alignItems:'center'}}><img src={item.image_url ? `${backendUrl}${item.image_url}` : '/placeholder-image.png'} alt="" style={{width:'40px', height:'40px', objectFit:'cover', borderRadius:'4px', marginRight:'10px'}}/><div><div style={{fontWeight:'bold', fontSize:'14px'}}>{item.name || 'Product'}</div><small style={{color:'#666'}}>Qty: {item.quantity}</small></div></div><div style={{fontWeight:'bold'}}>{formatPrice(item.total)}</div>
+                        <div style={{display:'flex', alignItems:'center'}}><img src={getImageUrl(item.image_url)} alt="" style={{width:'40px', height:'40px', objectFit:'cover', borderRadius:'4px', marginRight:'10px'}}/><div><div style={{fontWeight:'bold', fontSize:'14px'}}>{item.name || 'Product'}</div><small style={{color:'#666'}}>Qty: {item.quantity}</small></div></div><div style={{fontWeight:'bold'}}>{formatPrice(item.total)}</div>
                       </div>
                     ))}
                   </div>

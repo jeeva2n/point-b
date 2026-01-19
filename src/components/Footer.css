@@ -7,14 +7,10 @@
   max-width: 1400px;
   width: 90%;
   font-family: "Poppins", sans-serif;
-  /* FIXED: Changed flex properties to prevent unwanted gap */
   flex-shrink: 0;
-  
-  /* FIXED: No top margin to attach directly to content */
   margin: 0 auto 20px auto;
   position: relative;
   z-index: 100;
-  /* FIXED: Add flex to properly join with content */
   display: flex;
 }
 
@@ -26,14 +22,21 @@
   width: 100%;
 }
 
-/* Left Nav */
-.footer-nav ul {
+/* Left Nav - DESKTOP VIEW (horizontal) */
+.footer-nav {
+  width: auto;
+}
+
+.footer-nav-list {
   list-style: none;
   display: flex;
-  flex-wrap: wrap;
   gap: 25px;
   margin: 0;
   padding: 0;
+}
+
+.footer-nav-item {
+  display: inline-block;
 }
 
 .footer-nav a {
@@ -134,61 +137,76 @@
 /* FIXED: Handle large screens and zoomed-out view */
 @media screen and (min-width: 1400px) or (min-height: 900px) {
   .footer {
-    /* FIXED: Eliminate margin when zoomed out */
     margin: 0 auto 20px auto;
   }
 }
 
-/* Tablet and smaller screens */
+/* Tablet (768px - 900px) */
 @media (max-width: 900px) {
   .footer {
     border-radius: 0;
     width: 100%;
-    /* FIXED: No top margin */
-    margin: 0 0 0 0;
+    margin: 0;
     padding: 15px 20px;
   }
 
   .footer-container {
-    flex-direction: column;
-    gap: 15px;
+    /* flex-direction: column; */
+    gap: 20px;
     padding: 10px 0;
     text-align: center;
   }
 
-  .footer-nav ul {
-    justify-content: center;
-    gap: 20px;
+  /* MOBILE VIEW: Change to vertical stack */
+  .footer-nav-list {
+    flex-direction: column; /* Vertical stack on mobile */
+    gap: 15px;
+    width: 100%;
+    align-items: center;
+  }
+
+  .footer-nav-item {
+    width: 100%;
+    text-align: center;
+  }
+
+  .footer-nav a {
+    padding: 8px 0;
+    font-size: 14px;
+    white-space: normal;
   }
 }
 
+/* Mobile (480px - 768px) */
 @media (max-width: 768px) {
   .footer {
-    /* FIXED: Remove margin completely */
     margin: 0;
     padding: 12px 15px;
   }
   
-  .footer-nav ul {
-    gap: 15px;
+  .footer-nav-list {
+    gap: 12px;
   }
   
   .footer-nav a {
     font-size: 13px;
+    padding: 6px 0;
   }
 }
 
+/* Small Mobile (< 480px) */
 @media (max-width: 480px) {
   .footer {
     padding: 10px 12px;
   }
   
-  .footer-nav ul {
-    gap: 10px; /* Reduce gap between links */
+  .footer-nav-list {
+    gap: 10px;
   }
 
   .footer-nav a {
-    font-size: 12px; /* Slightly smaller font */
+    font-size: 12px;
+    padding: 5px 0;
   }
   
   .social-icon {
@@ -196,11 +214,15 @@
     height: 28px;
     font-size: 13px;
   }
+  
+  .social-links {
+    gap: 8px;
+  }
 }
 
 /* GLOBAL RESET FOR CONSISTENCY ACROSS PCs */
 *, *::before, *::after {
-  box-sizing: border-box; /* Crucial: Keeps padding inside width calculations */
+  box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -208,15 +230,14 @@
 html, body {
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden; /* Prevents horizontal scrollbar on Windows PCs */
+  overflow-x: hidden;
 }
 
 /* FIXED: Root layout to prevent gaps */
 #root {
   display: flex;
   flex-direction: column;
-  min-height: 100vh; 
-  /* FIXED: Don't allow root to expand beyond content */
+  min-height: 100vh;
   height: auto;
 }
 

@@ -1,9 +1,10 @@
 // components/BaseProductList.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from '../../config/api';
 import styles from "../css/ProductsGrid.module.css"; 
 
-// ... (Icons, helper functions remain the same) ...
+// ... (Icons remain the same) ...
 export const Icons = {
   Search: () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -57,8 +58,8 @@ export const Icons = {
   )
 };
 
-// Shared Image Helper Function
-export const getImageSrc = (product, BACKEND_URL) => {
+// Shared Image Helper Function - Now uses API_URL from config
+export const getImageSrc = (product, backendUrl = API_URL) => {
   if (!product) return "/images/placeholder.jpg";
 
   let imagePath = 
@@ -81,7 +82,7 @@ export const getImageSrc = (product, BACKEND_URL) => {
   }
 
   const cleanPath = pathString.startsWith("/") ? pathString : `/${pathString}`;
-  return `${BACKEND_URL}${cleanPath}`;
+  return `${backendUrl}${cleanPath}`;
 };
 
 // Shared Material Helper Function
@@ -91,6 +92,7 @@ export const getMaterialString = (material) => {
   if (typeof material === 'object') return JSON.stringify(material);
   return String(material);
 };
+
 // Base Product List Component
 export const BaseProductList = ({
   productType,
@@ -109,7 +111,8 @@ export const BaseProductList = ({
   const navigate = useNavigate();
   const productCardsRef = useRef([]);
 
-  const BACKEND_URL = config.BACKEND_URL || "http://192.168.1.9:5001";
+  // Use API_URL from config, with fallback to passed config or environment
+  const BACKEND_URL = config.BACKEND_URL || API_URL;
 
   // Calculate filteredProducts here (BEFORE any effects)
   const filteredProducts = products.filter((product) => {
@@ -148,7 +151,7 @@ export const BaseProductList = ({
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [filteredProducts]); // filteredProducts is now defined
+  }, [filteredProducts]);
 
   const fetchProducts = async () => {
     try {
@@ -204,21 +207,6 @@ export const BaseProductList = ({
             <span className={styles.headerBadge}>{badgeText}</span>
             <h1>{getCurrentPageTitle()}</h1>
             <p>{getCurrentPageDescription()}</p>
-
-            {/* <div className={styles.headerStats}>
-              <div className={styles.statItem}>
-                <span className={styles.statNumber}>{filteredProducts.length}</span>
-                <span className={styles.statLabel}>Products</span>
-              </div>
-              <div className={styles.statItem}>
-                <span className={styles.statNumber}>{categories.length - 1}</span>
-                <span className={styles.statLabel}>Categories</span>
-              </div>
-              <div className={styles.statItem}>
-                <span className={styles.statNumber}>ISO</span>
-                <span className={styles.statLabel}>Certified</span>
-              </div>
-            </div> */}
           </div>
         </div>
 
@@ -275,27 +263,6 @@ export const BaseProductList = ({
               </button>
             ))}
           </div>
-
-          {/* {(searchTerm || selectedCategory !== "All") && (
-            <div className={styles.activeFilters}>
-              <span className={styles.filtersLabel}>Active filters:</span>
-              {selectedCategory !== "All" && (
-                <span className={styles.filterTag}>
-                  {selectedCategory}
-                  <button onClick={() => handleCategoryChange("All")}><Icons.Close /></button>
-                </span>
-              )}
-              {searchTerm && (
-                <span className={styles.filterTag}>
-                  "{searchTerm}"
-                  <button onClick={() => setSearchTerm("")}><Icons.Close /></button>
-                </span>
-              )}
-              <button className={styles.clearAllBtn} onClick={clearFilters}>
-                Clear all
-              </button>
-            </div>
-          )} */}
         </div>
 
         {/* Products Grid */}

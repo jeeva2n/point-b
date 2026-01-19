@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from './../config/api';
 import './css/Cart.css';
-
-// --- Backend Helper ---
-const getBackendUrl = () => {
-  return localStorage.getItem('backend_url') || 'http://192.168.1.9:5001';
-};
 
 const Cart = () => {
   const [cart, setCart] = useState({ items: [] });
@@ -31,10 +27,16 @@ const Cart = () => {
   const [orderHistory, setOrderHistory] = useState([]);
 
   const navigate = useNavigate();
-  const backendUrl = getBackendUrl();
   
   // Web3Forms Access Key
   const WEB3_ACCESS_KEY = "73a5d128-f5b6-4b66-80c6-bdac56b080c8";
+
+  // Helper function to get image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/images/placeholder.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${API_URL}${imagePath}`;
+  };
 
   // Load cart from API
   const loadCart = useCallback(async () => {
@@ -45,7 +47,7 @@ const Cart = () => {
     }
 
     try {
-      const response = await fetch(`${backendUrl}/api/cart/${cartId}`);
+      const response = await fetch(`${API_URL}/api/cart/${cartId}`);
       const data = await response.json();
       
       if (data.success && data.cart) {
@@ -60,7 +62,7 @@ const Cart = () => {
       console.error('Error loading cart:', error);
       setCart({ items: [] });
     }
-  }, [backendUrl]);
+  }, []);
 
   // Load quote request from API
   const loadQuoteRequest = useCallback(async () => {
@@ -71,7 +73,7 @@ const Cart = () => {
     }
 
     try {
-      const response = await fetch(`${backendUrl}/api/quote-requests/${quoteId}`);
+      const response = await fetch(`${API_URL}/api/quote-requests/${quoteId}`);
       const data = await response.json();
       
       if (data.success && data.quoteRequest) {
@@ -86,13 +88,13 @@ const Cart = () => {
       console.error('Error loading quote request:', error);
       setQuoteRequest({ items: [] });
     }
-  }, [backendUrl]);
+  }, []);
 
   // Fetch order history
   const fetchOrderHistory = useCallback(async (token) => {
     try {
       setOrderHistoryLoading(true);
-      const response = await fetch(`${backendUrl}/api/auth/profile`, {
+      const response = await fetch(`${API_URL}/api/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -116,7 +118,7 @@ const Cart = () => {
     } finally {
       setOrderHistoryLoading(false);
     }
-  }, [backendUrl]);
+  }, []);
 
   // Check login status
   const checkLoginStatus = useCallback(async () => {
@@ -191,7 +193,7 @@ const Cart = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(`${backendUrl}/api/cart/${cartId}/items/${itemId}`, {
+      const response = await fetch(`${API_URL}/api/cart/${cartId}/items/${itemId}`, {
         method: 'DELETE'
       });
       
@@ -222,7 +224,7 @@ const Cart = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(`${backendUrl}/api/quote-requests/${quoteId}/items/${itemId}`, {
+      const response = await fetch(`${API_URL}/api/quote-requests/${quoteId}/items/${itemId}`, {
         method: 'DELETE'
       });
       
@@ -257,8 +259,8 @@ const Cart = () => {
       setLoading(true);
       
       const endpoint = type === 'cart' 
-        ? `${backendUrl}/api/cart/${id}/items/${itemId}` 
-        : `${backendUrl}/api/quote-requests/${id}/items/${itemId}`;
+        ? `${API_URL}/api/cart/${id}/items/${itemId}` 
+        : `${API_URL}/api/quote-requests/${id}/items/${itemId}`;
       
       const response = await fetch(endpoint, {
         method: 'PUT',
@@ -330,7 +332,7 @@ const Cart = () => {
     }));
   };
 
-  // PROCESS ORDER
+  // PROCESS ORDER - CORRECTED VERSION (NO DUPLICATES)
   const processOrder = async (e) => {
     e.preventDefault();
     
@@ -355,15 +357,20 @@ const Cart = () => {
         return;
       }
 
-      // CREATE ORDER IN DATABASE
-      const orderResponse = await fetch(`${backendUrl}/api/orders`, {
+      // Calculate totals
+      const subtotal = calculateTotal(cart.items);
+      const tax = subtotal * 0.18; // 18% GST
+      const shipping_cost = 200; // Fixed shipping
+      const total_amount = subtotal + tax + shipping_cost;
+
+      // CREATE ORDER IN shop_orders TABLE
+      const orderResponse = await fetch(`${API_URL}/api/orders/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          cartId: cartId,
           customerDetails: {
             name: formData.name,
             email: formData.email,
@@ -376,46 +383,59 @@ const Cart = () => {
             country: formData.country,
             notes: formData.message
           },
-          orderType: 'purchase'
+          items: cart.items.map(item => ({
+            productId: item.product_id,
+            name: item.product_name,
+            price: item.price,
+            quantity: item.quantity,
+            imageUrl: item.image_url,
+            sku: item.sku
+          })),
+          paymentMethod: 'COD',
+          notes: formData.message
         }),
       });
       
       const orderData = await orderResponse.json();
       
       if (!orderData.success) {
-        throw new Error(orderData.message || 'Failed to create order in database');
+        throw new Error(orderData.message || 'Failed to create order');
       }
 
-      const orderNumber = orderData.orderNumber || `ORD-${Date.now()}`;
-      const totalAmount = calculateTotal(cart.items).toFixed(2);
+      const orderNumber = orderData.orderNumber;
+      const totalAmount = orderData.totalAmount || total_amount.toFixed(2);
 
-      // SEND EMAIL USING WEB3FORMS
+      // Send confirmation email using Web3Forms
       const mailFormData = new FormData();
       mailFormData.append("access_key", WEB3_ACCESS_KEY);
-      mailFormData.append("subject", `New Order #${orderNumber} - Rs.${totalAmount} - DAKS NDT Services`);
+      mailFormData.append("subject", `Order Confirmation #${orderNumber} - DAKS NDT Services`);
       mailFormData.append("name", formData.name);
       mailFormData.append("email", formData.email);
       mailFormData.append("phone", formData.phone);
       mailFormData.append("company", formData.company || 'Not provided');
       mailFormData.append("message", `
-        New Purchase Order #${orderNumber}
-        Total Amount: Rs.${totalAmount}
+        ORDER CONFIRMATION #${orderNumber}
+        Total Amount: ₹${totalAmount}
         
-        Customer: ${formData.name}
-        Email: ${formData.email}
-        Phone: ${formData.phone}
-        Company: ${formData.company || 'Not provided'}
-        User ID: ${user.id}
+        Thank you for your order, ${formData.name}!
+        
+        Order Summary:
+        ${cart.items.map(item => `- ${item.product_name} x${item.quantity} @ ₹${parseFloat(item.price).toFixed(2)} = ₹${(item.price * item.quantity).toFixed(2)}`).join('\n')}
+        
+        Subtotal: ₹${subtotal.toFixed(2)}
+        Tax (18%): ₹${tax.toFixed(2)}
+        Shipping: ₹${shipping_cost.toFixed(2)}
+        Total: ₹${totalAmount}
         
         Shipping Address:
-        ${formData.address || 'Not provided'}
-        ${formData.city || ''} ${formData.state || ''} ${formData.zip || ''}
-        ${formData.country || 'India'}
+        ${formData.address}
+        ${formData.city}, ${formData.state} ${formData.zip}
+        ${formData.country}
         
-        Order Notes: ${formData.message || 'No special instructions'}
+        Order Notes: ${formData.message || 'None'}
         
-        Order Items:
-        ${cart.items.map(item => `- ${item.product_name} x${item.quantity || 1} @ Rs.${parseFloat(item.price || 0).toFixed(2)} each = Rs.${((item.price || 0) * (item.quantity || 1)).toFixed(2)}`).join('\n')}
+        We will process your order and notify you once it ships.
+        For any questions, please contact us.
       `);
       
       mailFormData.append("from_name", "DAKS NDT Order System");
@@ -429,13 +449,25 @@ const Cart = () => {
       const mailResult = await mailResponse.json();
 
       if (mailResult.success) {
+        // Clear cart
         localStorage.removeItem('cartId');
         setCart({ items: [] });
-        await fetchOrderHistory(localStorage.getItem('token'));
+        
+        // Show success message
         setCheckoutStep('confirmation');
+        
+        // Refresh order history
+        if (isLoggedIn) {
+          await fetchOrderHistory(localStorage.getItem('token'));
+        }
+        
+        console.log('✅ Order created successfully:', orderNumber);
       } else {
-        console.error("Order email API error:", mailResult);
-        alert('Order was saved but email notification failed. Our team will contact you.');
+        console.error("Email API error:", mailResult);
+        // Still show success since order was saved to DB
+        alert('Order was placed successfully but confirmation email failed. Please save your order number: ' + orderNumber);
+        localStorage.removeItem('cartId');
+        setCart({ items: [] });
         setCheckoutStep('confirmation');
       }
       
@@ -473,7 +505,7 @@ const Cart = () => {
       }
 
       // FINALIZE QUOTE REQUEST IN DATABASE
-      const quoteResponse = await fetch(`${backendUrl}/api/quote-requests/${quoteId}/finalize`, {
+      const quoteResponse = await fetch(`${API_URL}/api/quote-requests/${quoteId}/finalize`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -708,184 +740,183 @@ const Cart = () => {
       <div className="cart-container">
         <h2>{activeTab === 'cart' ? 'Complete Your Order' : 'Submit Quote Request'}</h2>
         
-<form
-  className="checkoutForm"
-  onSubmit={activeTab === 'cart' ? processOrder : processQuoteRequest}
->
-  {/* Contact Information */}
-  <div className="checkoutSection">
-    <h3 className="sectionTitle">Contact Information</h3>
+        <form
+          className="checkoutForm"
+          onSubmit={activeTab === 'cart' ? processOrder : processQuoteRequest}
+        >
+          {/* Contact Information */}
+          <div className="checkoutSection">
+            <h3 className="sectionTitle">Contact Information</h3>
 
-    <div className="formRow">
-      <div className="formField">
-        <label htmlFor="name">Full Name *</label>
-        <input
-          type="text"
-          id="name"
-          name="name"
-          value={formData.name}
-          onChange={handleInputChange}
-          required
-          placeholder="John Doe"
-        />
-      </div>
+            <div className="formRow">
+              <div className="formField">
+                <label htmlFor="name">Full Name *</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="John Doe"
+                />
+              </div>
 
-      <div className="formField">
-        <label htmlFor="email">Email Address *</label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          value={formData.email}
-          onChange={handleInputChange}
-          required
-          placeholder="john@example.com"
-        />
-      </div>
-    </div>
+              <div className="formField">
+                <label htmlFor="email">Email Address *</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="john@example.com"
+                />
+              </div>
+            </div>
 
-    <div className="formRow">
-      <div className="formField">
-        <label htmlFor="phone">Phone Number *</label>
-        <input
-          type="tel"
-          id="phone"
-          name="phone"
-          value={formData.phone}
-          onChange={handleInputChange}
-          required
-          placeholder="+91 9876543210"
-        />
-      </div>
+            <div className="formRow">
+              <div className="formField">
+                <label htmlFor="phone">Phone Number *</label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="+91 9876543210"
+                />
+              </div>
 
-      <div className="formField">
-        <label htmlFor="company">Company Name</label>
-        <input
-          type="text"
-          id="company"
-          name="company"
-          value={formData.company}
-          onChange={handleInputChange}
-          placeholder="Your Company"
-        />
-      </div>
-    </div>
-  </div>
+              <div className="formField">
+                <label htmlFor="company">Company Name</label>
+                <input
+                  type="text"
+                  id="company"
+                  name="company"
+                  value={formData.company}
+                  onChange={handleInputChange}
+                  placeholder="Your Company"
+                />
+              </div>
+            </div>
+          </div>
 
-  {/* Shipping Address */}
-  <div className="checkoutSection">
-    <h3 className="sectionTitle">Shipping Address</h3>
+          {/* Shipping Address */}
+          <div className="checkoutSection">
+            <h3 className="sectionTitle">Shipping Address</h3>
 
-    <div className="formField">
-      <label htmlFor="address">Address</label>
-      <input
-        type="text"
-        id="address"
-        name="address"
-        value={formData.address}
-        onChange={handleInputChange}
-        placeholder="Street Address"
-      />
-    </div>
+            <div className="formField">
+              <label htmlFor="address">Address</label>
+              <input
+                type="text"
+                id="address"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                placeholder="Street Address"
+              />
+            </div>
 
-    <div className="formRow">
-      <div className="formField">
-        <label htmlFor="city">City</label>
-        <input
-          type="text"
-          id="city"
-          name="city"
-          value={formData.city}
-          onChange={handleInputChange}
-          placeholder="City"
-        />
-      </div>
+            <div className="formRow">
+              <div className="formField">
+                <label htmlFor="city">City</label>
+                <input
+                  type="text"
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                  placeholder="City"
+                />
+              </div>
 
-      <div className="formField">
-        <label htmlFor="state">State</label>
-        <input
-          type="text"
-          id="state"
-          name="state"
-          value={formData.state}
-          onChange={handleInputChange}
-          placeholder="State"
-        />
-      </div>
+              <div className="formField">
+                <label htmlFor="state">State</label>
+                <input
+                  type="text"
+                  id="state"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleInputChange}
+                  placeholder="State"
+                />
+              </div>
 
-      <div className="formField">
-        <label htmlFor="zip">PIN Code</label>
-        <input
-          type="text"
-          id="zip"
-          name="zip"
-          value={formData.zip}
-          onChange={handleInputChange}
-          placeholder="PIN Code"
-        />
-      </div>
-    </div>
+              <div className="formField">
+                <label htmlFor="zip">PIN Code</label>
+                <input
+                  type="text"
+                  id="zip"
+                  name="zip"
+                  value={formData.zip}
+                  onChange={handleInputChange}
+                  placeholder="PIN Code"
+                />
+              </div>
+            </div>
 
-    <div className="formField">
-      <label htmlFor="country">Country</label>
-      <input
-        type="text"
-        id="country"
-        name="country"
-        value={formData.country}
-        onChange={handleInputChange}
-        placeholder="Country"
-      />
-    </div>
-  </div>
+            <div className="formField">
+              <label htmlFor="country">Country</label>
+              <input
+                type="text"
+                id="country"
+                name="country"
+                value={formData.country}
+                onChange={handleInputChange}
+                placeholder="Country"
+              />
+            </div>
+          </div>
 
-  {/* Additional Information */}
-  <div className="checkoutSection">
-    <h3 className="sectionTitle">Additional Information</h3>
+          {/* Additional Information */}
+          <div className="checkoutSection">
+            <h3 className="sectionTitle">Additional Information</h3>
 
-    <div className="formField">
-      <label htmlFor="message">
-        {activeTab === 'cart' ? 'Order Notes' : 'Quote Requirements'}
-      </label>
-      <textarea
-        id="message"
-        name="message"
-        value={formData.message}
-        onChange={handleInputChange}
-        rows="4"
-        placeholder={
-          activeTab === 'cart'
-            ? 'Any special instructions for your order...'
-            : 'Please describe your requirements, specifications, or any other details...'
-        }
-      />
-    </div>
-  </div>
+            <div className="formField">
+              <label htmlFor="message">
+                {activeTab === 'cart' ? 'Order Notes' : 'Quote Requirements'}
+              </label>
+              <textarea
+                id="message"
+                name="message"
+                value={formData.message}
+                onChange={handleInputChange}
+                rows="4"
+                placeholder={
+                  activeTab === 'cart'
+                    ? 'Any special instructions for your order...'
+                    : 'Please describe your requirements, specifications, or any other details...'
+                }
+              />
+            </div>
+          </div>
 
-  {/* Actions */}
-  <div className="formActions">
-    <button
-      type="button"
-      className="secondaryBtn"
-      onClick={() => setCheckoutStep('cart')}
-    >
-      Back to Cart
-    </button>
+          {/* Actions */}
+          <div className="formActions">
+            <button
+              type="button"
+              className="secondaryBtn"
+              onClick={() => setCheckoutStep('cart')}
+            >
+              Back to Cart
+            </button>
 
-    <button
-      type="submit"
-      className="primaryBtn"
-      disabled={loading}
-    >
-      {loading
-        ? 'Processing...'
-        : activeTab === 'cart'
-        ? 'Place Order'
-        : 'Submit Quote Request'}
-    </button>
-  </div>
-</form>
-
+            <button
+              type="submit"
+              className="primaryBtn"
+              disabled={loading}
+            >
+              {loading
+                ? 'Processing...'
+                : activeTab === 'cart'
+                ? 'Place Order'
+                : 'Submit Quote Request'}
+            </button>
+          </div>
+        </form>
       </div>
     );
   }
@@ -946,7 +977,7 @@ const Cart = () => {
                   <div key={item.id || item.product_id} className="cart-item">
                     <div className="cart-item-image">
                       <img 
-                        src={item.image_url ? `${backendUrl}${item.image_url}` : '/images/placeholder.jpg'} 
+                        src={getImageUrl(item.image_url)} 
                         alt={item.product_name}
                         onError={(e) => {
                           e.target.src = '/images/placeholder.jpg';
@@ -1067,7 +1098,7 @@ const Cart = () => {
                   <div key={item.id || item.product_id} className="cart-item">
                     <div className="cart-item-image">
                       <img 
-                        src={item.image_url ? `${backendUrl}${item.image_url}` : '/images/placeholder.jpg'} 
+                        src={getImageUrl(item.image_url)} 
                         alt={item.product_name}
                         onError={(e) => {
                           e.target.src = '/images/placeholder.jpg';
