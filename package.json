@@ -1,8 +1,8 @@
 {
   "name": "daks-ndt-frontend",
   "version": "1.0.0",
-  "private": true,
-  "proxy": "http://192.168.1.16:5002",
+  "homepage": "http://dakstool.webhostbox.net",
+  "proxy": "https://dakstools.com",
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
     "@testing-library/jest-dom": "^5.17.0",
@@ -14,6 +14,7 @@
     "lucide-react": "^0.556.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.6.0",
     "react-icons": "^4.12.0",
     "react-router-dom": "^6.20.1",
     "react-scripts": "5.0.1",

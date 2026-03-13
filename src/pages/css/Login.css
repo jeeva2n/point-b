@@ -1,23 +1,27 @@
-/* Login.css */
-
+/* PAGE */
 .login-page {
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  padding: 20px;
+  padding: 40px 0;
   box-sizing: border-box;
 }
 
-.login-container {
+/* 🔑 SAME WIDTH AS HEADER */
+/* If your header uses 1400px, change 1320px → 1400px */
+.layout-width {
   width: 100%;
-  max-width: 420px;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 20px;
+  box-sizing: border-box;
 }
 
+/* LOGIN CARD */
 .login-card {
-  border-radius: 10px;
+  max-width: 420px;
+  margin: 0 auto 70px;
   padding: 32px 28px;
+  border-radius: 10px;
+  background: #ffffff;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
@@ -39,6 +43,7 @@
   color: #666;
 }
 
+/* ERROR */
 .login-error {
   background: #fdecea;
   color: #b42318;
@@ -50,6 +55,7 @@
   text-align: center;
 }
 
+/* FORM */
 .login-form {
   display: flex;
   flex-direction: column;
@@ -63,11 +69,6 @@
   border-radius: 6px;
   border: 1px solid #d0d5dd;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.login-form input::placeholder {
-  color: #98a2b3;
 }
 
 .login-form input:focus {
@@ -82,16 +83,11 @@
   border-radius: 6px;
   border: none;
   cursor: pointer;
-  color: #ffffff;
-  transition: background 0.2s, transform 0.05s;
+  color: #000000;
 }
 
 .login-form button:hover:not(:disabled) {
   background: #4338ca;
-}
-
-.login-form button:active:not(:disabled) {
-  transform: translateY(1px);
 }
 
 .login-form button:disabled {
@@ -107,17 +103,59 @@
   margin-top: 4px;
 }
 
-.back-link:hover {
-  text-decoration: underline;
+/* ---------------- NDT SECTION ---------------- */
+
+.ndt-info {
+  margin-top: 20px;
 }
 
-/* Small screens */
-@media (max-width: 480px) {
-  .login-card {
-    padding: 24px 20px;
+.ndt-info h3 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 10px;
+}
+
+.ndt-info p {
+  font-size: 15px;
+  color: #4b5563;
+  max-width: 850px;
+  line-height: 1.6;
+}
+
+.ndt-grid {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.ndt-grid h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #111827;
+}
+
+.ndt-grid ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ndt-grid li {
+  font-size: 14px;
+  color: #374151;
+  padding: 4px 0;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+  .ndt-grid {
+    grid-template-columns: 1fr;
   }
 
-  .login-header h2 {
-    font-size: 22px;
+  .login-card {
+    margin-bottom: 50px;
   }
 }

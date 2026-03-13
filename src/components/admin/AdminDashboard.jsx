@@ -1,7 +1,7 @@
 // AdminDashboard.js
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { API_URL, ENDPOINTS, getImageUrl as getImageUrlFromConfig, apiCall } from '../../config/api';
+import { API_URL, ENDPOINTS, getImageUrl, apiCall } from '../../config/api';
 import './AdminDashboard.css';
 
 // Define your product type categories
@@ -1094,28 +1094,28 @@ function AdminDashboard() {
   };
 
   // Helper to safely get image URL (Handles both string and object formats)
-  const getImageUrl = (input) => {
-    if (!input) return '/placeholder-image.png';
+  // const getImageUrl = (input) => {
+  //   if (!input) return '/placeholder-image.png';
 
-    let path = input;
+  //   let path = input;
 
-    // Check if path is an image object (e.g. { url: '...' } or { path: '...' })
-    if (typeof path === 'object' && path !== null) {
-      path = path.url || path.path;
-    }
+  //   // Check if path is an image object (e.g. { url: '...' } or { path: '...' })
+  //   if (typeof path === 'object' && path !== null) {
+  //     path = path.url || path.path;
+  //   }
 
-    // Double check it's a string now
-    if (!path || typeof path !== 'string') return '/placeholder-image.png';
+  //   // Double check it's a string now
+  //   if (!path || typeof path !== 'string') return '/placeholder-image.png';
 
-    // Check if absolute URL
-    if (path.startsWith('http') || path.startsWith('blob:')) {
-      return path;
-    }
+  //   // Check if absolute URL
+  //   if (path.startsWith('http') || path.startsWith('blob:')) {
+  //     return path;
+  //   }
 
-    // It's a relative path, prepend backend URL from config
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    return `${API_URL}${cleanPath}`;
-  };
+  //   // It's a relative path, prepend backend URL from config
+  //   const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  //   return `${API_URL}${cleanPath}`;
+  // };
 
   // Safe image error handler
   const handleImageError = (e) => {

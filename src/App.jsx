@@ -47,7 +47,7 @@ function ProtectedRoute({ children }) {
 
 // Loading component
 function LoadingFallback() {
-  return <div className="loading">Loading...</div>;
+  return <div className="loading"></div>;
 }
 
 function App() {

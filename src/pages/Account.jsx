@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL } from './../config/api';
+import { API_URL, getImageUrl } from './../config/api';
 import './css/Account.css';
 
 const Account = () => {
@@ -35,12 +35,14 @@ const Account = () => {
       
       const data = await response.json();
       
+      console.log('Profile API Response:', data);
+      
       if (data.success) {
         setUser(data.user);
         setOrders(data.orders || []);
         setQuoteRequests(data.quoteRequests || []);
       } else {
-        if (data.message === 'Authentication required' || data.message === 'Token expired') {
+        if (data.message === 'Authentication required' || data.message === 'Token expired' || data.message === 'Invalid token') {
           handleLogout();
         } else {
           setError(data.message);
@@ -116,7 +118,6 @@ const Account = () => {
   return (
     <div className="account-page">
       <div className="account-container">
-        {/* Sidebar */}
         <aside className="account-sidebar">
           <div className="account-user-info">
             <div className="user-avatar">
@@ -152,7 +153,6 @@ const Account = () => {
                   <polyline points="14 2 14 8 20 8"/>
                   <line x1="16" y1="13" x2="8" y2="13"/>
                   <line x1="16" y1="17" x2="8" y2="17"/>
-                  <polyline points="10 9 9 9 8 9"/>
                 </svg>
               </span>
               <span className="tab-text">Quote Requests</span>
@@ -183,7 +183,6 @@ const Account = () => {
           </button>
         </aside>
         
-        {/* Main Content */}
         <main className="account-content">
           {error && (
             <div className="error-message">
@@ -197,7 +196,6 @@ const Account = () => {
             </div>
           )}
 
-          {/* ORDERS TAB */}
           {activeTab === 'orders' && (
             <section className="orders-section">
               <div className="section-header">
@@ -263,7 +261,6 @@ const Account = () => {
             </section>
           )}
 
-          {/* QUOTES TAB */}
           {activeTab === 'quotes' && (
             <section className="orders-section">
               <div className="section-header">
@@ -306,12 +303,6 @@ const Account = () => {
                           <span className="label">Items:</span>
                           <span className="value">{quote.product_names || 'Product details unavailable'}</span>
                         </div>
-                        {quote.message && (
-                          <div className="order-message">
-                            <span className="label">Requirements:</span>
-                            <span className="value">{quote.message}</span>
-                          </div>
-                        )}
                       </div>
                       
                       <div className="order-footer">
@@ -331,7 +322,6 @@ const Account = () => {
             </section>
           )}
 
-          {/* PROFILE TAB */}
           {activeTab === 'profile' && (
             <section className="profile-section">
               <div className="section-header">

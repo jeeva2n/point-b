@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import './GalleryManager.css';
+import { API_URL, getImageUrl } from '../../config/api';
 
 const GalleryManager = ({ backendUrl }) => {
   const [gallery, setGallery] = useState([]);
@@ -11,7 +12,7 @@ const GalleryManager = ({ backendUrl }) => {
   const [editingItem, setEditingItem] = useState(null);
   const [isReordering, setIsReordering] = useState(false);
   const [hasOrderChanges, setHasOrderChanges] = useState(false);
-  
+
   const [uploadForm, setUploadForm] = useState({
     title: '',
     description: '',
@@ -35,15 +36,15 @@ const GalleryManager = ({ backendUrl }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('admin_token');
-      const url = filterType === 'all' 
+      const url = filterType === 'all'
         ? `${backendUrl}/api/gallery/admin`
         : `${backendUrl}/api/gallery/admin?type=${filterType}`;
-        
+
       const res = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
-      
+
       if (data.success) {
         setGallery(data.gallery || []);
       }
@@ -61,10 +62,10 @@ const GalleryManager = ({ backendUrl }) => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const preview = file.type.startsWith('video/') 
-        ? null 
+      const preview = file.type.startsWith('video/')
+        ? null
         : URL.createObjectURL(file);
-      
+
       setUploadForm({
         ...uploadForm,
         file,
@@ -76,7 +77,7 @@ const GalleryManager = ({ backendUrl }) => {
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    
+
     if (!uploadForm.file) {
       alert('Please select a file to upload');
       return;
@@ -86,7 +87,7 @@ const GalleryManager = ({ backendUrl }) => {
       setUploading(true);
       const token = localStorage.getItem('admin_token');
       const formData = new FormData();
-      
+
       formData.append('file', uploadForm.file);
       formData.append('title', uploadForm.title);
       formData.append('description', uploadForm.description);
@@ -100,7 +101,7 @@ const GalleryManager = ({ backendUrl }) => {
       });
 
       const data = await res.json();
-      
+
       if (data.success) {
         alert('File uploaded successfully!');
         resetUploadForm();
@@ -119,20 +120,20 @@ const GalleryManager = ({ backendUrl }) => {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    
+
     if (!editingItem) return;
 
     try {
       setUploading(true);
       const token = localStorage.getItem('admin_token');
       const formData = new FormData();
-      
+
       formData.append('title', editingItem.title);
       formData.append('description', editingItem.description || '');
       formData.append('category', editingItem.category || 'General');
       formData.append('tags', editingItem.tags || '');
       formData.append('is_active', editingItem.is_active);
-      
+
       if (editingItem.newFile) {
         formData.append('file', editingItem.newFile);
       }
@@ -144,7 +145,7 @@ const GalleryManager = ({ backendUrl }) => {
       });
 
       const data = await res.json();
-      
+
       if (data.success) {
         alert('Item updated successfully!');
         setEditingItem(null);
@@ -171,7 +172,7 @@ const GalleryManager = ({ backendUrl }) => {
       });
 
       const data = await res.json();
-      
+
       if (data.success) {
         alert('Item deleted successfully!');
         fetchGallery();
@@ -213,7 +214,7 @@ const GalleryManager = ({ backendUrl }) => {
       });
 
       const data = await res.json();
-      
+
       if (data.success) {
         alert('Order saved successfully!');
         setHasOrderChanges(false);
@@ -242,9 +243,8 @@ const GalleryManager = ({ backendUrl }) => {
   };
 
   const getFileUrl = (item) => {
-    if (!item.file_url) return '/placeholder-image.png';
-    if (item.file_url.startsWith('http')) return item.file_url;
-    return `${backendUrl}${item.file_url}`;
+    // Use our central helper which handles the /api prefix correctly
+    return getImageUrl(item.file_url);
   };
 
   const stats = {
@@ -260,7 +260,7 @@ const GalleryManager = ({ backendUrl }) => {
           <h2><i className="fas fa-images"></i> Gallery Manager</h2>
           <p>Upload and manage photos and videos for your gallery</p>
         </div>
-        <button 
+        <button
           className="gm-btn-upload"
           onClick={() => setShowUploadModal(true)}
         >
@@ -287,7 +287,7 @@ const GalleryManager = ({ backendUrl }) => {
       {/* Filters & Actions */}
       <div className="gm-toolbar">
         <div className="gm-filter-group">
-          <select 
+          <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
             disabled={isReordering}
@@ -297,11 +297,11 @@ const GalleryManager = ({ backendUrl }) => {
             <option value="video">Videos Only</option>
           </select>
         </div>
-        
+
         <div className="gm-toolbar-actions">
           {isReordering ? (
             <>
-              <button 
+              <button
                 onClick={() => { setIsReordering(false); fetchGallery(); setHasOrderChanges(false); }}
                 className="gm-btn-cancel-reorder"
               >
@@ -314,7 +314,7 @@ const GalleryManager = ({ backendUrl }) => {
               )}
             </>
           ) : (
-            <button 
+            <button
               onClick={() => setIsReordering(true)}
               className="gm-btn-reorder"
             >
@@ -349,7 +349,7 @@ const GalleryManager = ({ backendUrl }) => {
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="gallery-reorder" direction="horizontal">
             {(provided) => (
-              <div 
+              <div
                 className="gm-grid gm-reordering"
                 {...provided.droppableProps}
                 ref={provided.innerRef}
@@ -390,7 +390,7 @@ const GalleryManager = ({ backendUrl }) => {
             <div key={item.id} className={`gm-card ${!item.is_active ? 'gm-inactive' : ''}`}>
               {item.file_type === 'video' ? (
                 <div className="gm-video-thumbnail">
-                  <video src={getFileUrl(item)} />
+                  <video src={getImageUrl(item.file_url)} />
                   <div className="gm-play-icon">
                     <i className="fas fa-play"></i>
                   </div>
@@ -398,7 +398,7 @@ const GalleryManager = ({ backendUrl }) => {
               ) : (
                 <img src={getFileUrl(item)} alt={item.title} />
               )}
-              
+
               <div className="gm-card-overlay">
                 <div className="gm-item-info">
                   <h4>{item.title}</h4>
@@ -416,11 +416,11 @@ const GalleryManager = ({ backendUrl }) => {
                   </button>
                 </div>
               </div>
-              
+
               {!item.is_active && (
                 <div className="gm-inactive-badge">Hidden</div>
               )}
-              
+
               {item.category && (
                 <div className="gm-category-tag">{item.category}</div>
               )}
@@ -439,11 +439,11 @@ const GalleryManager = ({ backendUrl }) => {
                 <i className="fas fa-times"></i>
               </button>
             </div>
-            
+
             <form onSubmit={handleUpload} className="gm-upload-form">
               <div className="gm-drop-zone">
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   id="galleryFile"
                   accept="image/*,video/*"
                   onChange={handleFileChange}
@@ -471,7 +471,7 @@ const GalleryManager = ({ backendUrl }) => {
                 <input
                   type="text"
                   value={uploadForm.title}
-                  onChange={(e) => setUploadForm({...uploadForm, title: e.target.value})}
+                  onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
                   placeholder="Enter title..."
                   required
                 />
@@ -481,7 +481,7 @@ const GalleryManager = ({ backendUrl }) => {
                 <label>Description</label>
                 <textarea
                   value={uploadForm.description}
-                  onChange={(e) => setUploadForm({...uploadForm, description: e.target.value})}
+                  onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
                   placeholder="Enter description..."
                   rows="3"
                 />
@@ -492,7 +492,7 @@ const GalleryManager = ({ backendUrl }) => {
                   <label>Category</label>
                   <select
                     value={uploadForm.category}
-                    onChange={(e) => setUploadForm({...uploadForm, category: e.target.value})}
+                    onChange={(e) => setUploadForm({ ...uploadForm, category: e.target.value })}
                   >
                     <option value="">Select category</option>
                     {categories.map((cat, idx) => (
@@ -506,7 +506,7 @@ const GalleryManager = ({ backendUrl }) => {
                   <input
                     type="text"
                     value={uploadForm.tags}
-                    onChange={(e) => setUploadForm({...uploadForm, tags: e.target.value})}
+                    onChange={(e) => setUploadForm({ ...uploadForm, tags: e.target.value })}
                     placeholder="Comma-separated tags..."
                   />
                 </div>
@@ -539,11 +539,12 @@ const GalleryManager = ({ backendUrl }) => {
                 <i className="fas fa-times"></i>
               </button>
             </div>
-            
+
             <form onSubmit={handleUpdate} className="gm-upload-form">
               <div className="gm-current-file">
+            // RIGHT: use 'editingItem' and add 'controls' so you can see it
                 {editingItem.file_type === 'video' ? (
-                  <video src={getFileUrl(editingItem)} controls />
+                  <video src={getImageUrl(editingItem.file_url)} controls />
                 ) : (
                   <img src={getFileUrl(editingItem)} alt={editingItem.title} />
                 )}
@@ -551,12 +552,12 @@ const GalleryManager = ({ backendUrl }) => {
 
               <div className="gm-form-group">
                 <label>Replace File (optional)</label>
-                <input 
+                <input
                   type="file"
                   accept="image/*,video/*"
                   onChange={(e) => {
                     if (e.target.files[0]) {
-                      setEditingItem({...editingItem, newFile: e.target.files[0]});
+                      setEditingItem({ ...editingItem, newFile: e.target.files[0] });
                     }
                   }}
                 />
@@ -567,7 +568,7 @@ const GalleryManager = ({ backendUrl }) => {
                 <input
                   type="text"
                   value={editingItem.title}
-                  onChange={(e) => setEditingItem({...editingItem, title: e.target.value})}
+                  onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
                   required
                 />
               </div>
@@ -576,7 +577,7 @@ const GalleryManager = ({ backendUrl }) => {
                 <label>Description</label>
                 <textarea
                   value={editingItem.description || ''}
-                  onChange={(e) => setEditingItem({...editingItem, description: e.target.value})}
+                  onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
                   rows="3"
                 />
               </div>
@@ -586,7 +587,7 @@ const GalleryManager = ({ backendUrl }) => {
                   <label>Category</label>
                   <select
                     value={editingItem.category || ''}
-                    onChange={(e) => setEditingItem({...editingItem, category: e.target.value})}
+                    onChange={(e) => setEditingItem({ ...editingItem, category: e.target.value })}
                   >
                     <option value="">Select category</option>
                     {categories.map((cat, idx) => (
@@ -599,7 +600,7 @@ const GalleryManager = ({ backendUrl }) => {
                   <label>Status</label>
                   <select
                     value={editingItem.is_active ? 'true' : 'false'}
-                    onChange={(e) => setEditingItem({...editingItem, is_active: e.target.value === 'true'})}
+                    onChange={(e) => setEditingItem({ ...editingItem, is_active: e.target.value === 'true' })}
                   >
                     <option value="true">Active (Visible)</option>
                     <option value="false">Hidden</option>
@@ -612,7 +613,7 @@ const GalleryManager = ({ backendUrl }) => {
                 <input
                   type="text"
                   value={editingItem.tags || ''}
-                  onChange={(e) => setEditingItem({...editingItem, tags: e.target.value})}
+                  onChange={(e) => setEditingItem({ ...editingItem, tags: e.target.value })}
                   placeholder="Comma-separated tags..."
                 />
               </div>

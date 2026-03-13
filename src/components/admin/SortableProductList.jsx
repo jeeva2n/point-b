@@ -3,15 +3,16 @@
 import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import './SortableProductList.css'; // Add CSS file
+import { API_URL, getImageUrl } from '../../config/api';
 
-const SortableProductList = ({ 
-  type, 
-  typeName, 
-  backendUrl, 
-  token, 
-  onEdit, 
-  onDelete, 
-  refreshTrigger 
+const SortableProductList = ({
+  type,
+  typeName,
+  backendUrl,
+  token,
+  onEdit,
+  onDelete,
+  refreshTrigger
 }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,17 +23,18 @@ const SortableProductList = ({
   const fetchProductsByType = async () => {
     try {
       setLoading(true);
-      
+
       // Use the main products endpoint with type filter
+
       const res = await fetch(`${backendUrl}/api/products?type=${type}&limit=500`, {
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       const data = await res.json();
-      
+
       if (data.success) {
         // Sort by sort_order if available
         const sortedProducts = (data.products || []).sort((a, b) => {
@@ -50,7 +52,9 @@ const SortableProductList = ({
   };
 
   useEffect(() => {
-    if (type && backendUrl) {
+    // Only check for 'type'. We don't need to check 'backendUrl' 
+    // because it might be an empty string in production.
+    if (type) {
       fetchProductsByType();
     }
   }, [type, refreshTrigger, backendUrl]);
@@ -84,10 +88,10 @@ const SortableProductList = ({
     // 3. Send to Backend
     try {
       setSaving(true);
-      
+
       const res = await fetch(`${backendUrl}/api/products/reorder`, {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
@@ -95,7 +99,7 @@ const SortableProductList = ({
       });
 
       const data = await res.json();
-      
+
       if (data.success) {
         console.log(`✅ Sort order saved for ${type}`);
       } else {
@@ -112,22 +116,6 @@ const SortableProductList = ({
     }
   };
 
-  // Helper for images
-  const getImageUrl = (input) => {
-    if (!input) return '/placeholder-image.png';
-    
-    let path = input;
-    if (typeof input === 'object' && input !== null) {
-      path = input.url || input.path;
-    }
-    
-    if (!path || typeof path !== 'string') return '/placeholder-image.png';
-    if (path.startsWith('http') || path.startsWith('blob:')) return path;
-    
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    return `${backendUrl}${cleanPath}`;
-  };
-
   const formatPrice = (price) => {
     return price ? `₹${parseFloat(price).toFixed(2)}` : "₹0.00";
   };
@@ -142,7 +130,7 @@ const SortableProductList = ({
   if (loading) {
     return (
       <div className="sort-loading">
-        <i className="fas fa-spinner fa-spin"></i> 
+        <i className="fas fa-spinner fa-spin"></i>
         <span>Loading {typeName}...</span>
       </div>
     );
@@ -153,22 +141,22 @@ const SortableProductList = ({
       {/* Header */}
       <div className="sortable-list-header">
         <h3>
-          {typeName} 
+          {typeName}
           <span className="product-count">({products.length})</span>
         </h3>
-        
+
         <div className="header-actions">
           {saving && (
             <span className="saving-indicator">
               <i className="fas fa-spinner fa-spin"></i> Saving...
             </span>
           )}
-          
-          <button 
+
+          <button
             className={`reorder-toggle-btn ${isReordering ? 'active' : ''}`}
             onClick={() => setIsReordering(!isReordering)}
           >
-            <i className="fas fa-sort"></i> 
+            <i className="fas fa-sort"></i>
             {isReordering ? "Done Sorting" : "Reorder Products"}
           </button>
         </div>
@@ -191,19 +179,19 @@ const SortableProductList = ({
       ) : (
         /* Drag & Drop Context */
         <DragDropContext onDragEnd={handleOnDragEnd}>
-          <Droppable 
-            droppableId={`sortable-${type}`} 
+          <Droppable
+            droppableId={`sortable-${type}`}
             direction="vertical"
             type="PRODUCT"
           >
             {(provided, snapshot) => (
-              <div 
+              <div
                 className={`products-sortable-grid ${snapshot.isDraggingOver ? 'dragging-over' : ''}`}
                 ref={provided.innerRef}
                 {...provided.droppableProps}
               >
                 {products.map((product, index) => (
-                  <Draggable 
+                  <Draggable
                     key={`product-${product.id}`}
                     draggableId={`product-${product.id}`}
                     index={index}
@@ -220,7 +208,7 @@ const SortableProductList = ({
                       >
                         {/* Drag Handle - Only visible when reordering */}
                         {isReordering && (
-                          <div 
+                          <div
                             className="drag-handle"
                             {...provided.dragHandleProps}
                           >
@@ -231,39 +219,40 @@ const SortableProductList = ({
 
                         {/* Product Image */}
                         <div className="product-image-wrapper">
-                          <img 
-                            src={getImageUrl(product.mainImage || product.image_url)} 
+
+                          <img
+                            src={getImageUrl(product.mainImage || product.image_url)}
                             alt={product.name}
                             loading="lazy"
                             onError={handleImageError}
                           />
                         </div>
-                        
+
                         {/* Product Info */}
                         <div className="product-info-wrapper">
                           <h4 className="product-title">{product.name}</h4>
                           <div className="product-category-tag">{product.category}</div>
-                          
+
                           <div className="product-footer-row">
                             <div className="product-price-tag">
                               {formatPrice(product.price)}
                             </div>
-                            
+
                             {!isReordering && (
                               <div className="product-action-btns">
-                                <button 
-                                  onClick={() => onEdit && onEdit(product.id)} 
+                                <button
+                                  onClick={() => onEdit && onEdit(product.id)}
                                   className="action-btn view-btn"
                                   title="View/Edit"
                                 >EDIT
                                   <i className="fas fa-eye"></i>
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => {
                                     if (window.confirm('Are you sure you want to delete this product?')) {
                                       onDelete && onDelete(product.id);
                                     }
-                                  }} 
+                                  }}
                                   className="action-btn delete-btn"
                                   title="Delete"
                                 >DELETE

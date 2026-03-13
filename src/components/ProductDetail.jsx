@@ -12,17 +12,31 @@ const ProductDetail = () => {
   const [expandedAccordion, setExpandedAccordion] = useState('description');
   const [products, setProducts] = useState([]);
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
-  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [popup, setPopup] = useState({ 
+    show: false, 
+    message: '', 
+    type: '', 
+    action: null,
+    productName: ''
+  });
   
   const { productId } = useParams();
   const navigate = useNavigate();
 
-  // --- Show Notification ---
-  const showNotification = (message, type = 'success') => {
-    setNotification({ show: true, message, type });
+  // --- Show Popup ---
+  const showPopup = (message, type = 'success', action = null, productName = '') => {
+    setPopup({ 
+      show: true, 
+      message, 
+      type, 
+      action,
+      productName 
+    });
+    
+    // Auto-hide after 5 seconds
     setTimeout(() => {
-      setNotification({ show: false, message: '', type: '' });
-    }, 3000);
+      setPopup({ show: false, message: '', type: '', action: null, productName: '' });
+    }, 5000);
   };
 
   // --- Data Fetching ---
@@ -111,13 +125,22 @@ const ProductDetail = () => {
       
       if (result.success && result.data?.success) {
         if (result.data.cartId) localStorage.setItem('cartId', result.data.cartId);
-        showNotification(`${productObj.name} added to cart!`, 'success');
+        
+        // Show popup with option to go to cart
+        showPopup(
+          `${productObj.name} added to cart!`, 
+          'cart', 
+          () => navigate('/cart'),
+          productObj.name
+        );
+        
+        // Trigger cart update event for header
         window.dispatchEvent(new CustomEvent('cartUpdated'));
       } else {
-        showNotification('Failed to add to cart.', 'error');
+        showPopup('Failed to add to cart.', 'error');
       }
     } catch (error) {
-      showNotification('Error adding to cart.', 'error');
+      showPopup('Error adding to cart.', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -139,16 +162,25 @@ const ProductDetail = () => {
       
       if (result.success && result.data?.success) {
         if (result.data.quoteId) localStorage.setItem('quoteId', result.data.quoteId);
-        showNotification(`${productObj.name} added to quote request!`, 'success');
+        
+        // Show popup
+        showPopup(`${productObj.name} added to quote request!`, 'quote');
+        
+        // Trigger quote update event for header
         window.dispatchEvent(new CustomEvent('quoteUpdated'));
       } else {
-        showNotification('Failed to add to quote request.', 'error');
+        showPopup('Failed to add to quote request.', 'error');
       }
     } catch (error) {
-      showNotification('Error adding to quote request.', 'error');
+      showPopup('Error adding to quote request.', 'error');
     } finally {
       setActionLoading(false);
     }
+  };
+
+  // Handle popup close
+  const handlePopupClose = () => {
+    setPopup({ show: false, message: '', type: '', action: null, productName: '' });
   };
 
   // --- Data Helpers ---
@@ -226,10 +258,46 @@ const ProductDetail = () => {
 
   return (
     <div className="main-container">
-      {/* Notification */}
-      {notification.show && (
-        <div className={`notification ${notification.type}`}>
-          {notification.message}
+      {/* Popup Notification */}
+      {popup.show && (
+        <div className={`popup-notification ${popup.type}`}>
+          <div className="popup-content">
+            <div className="popup-message">
+              <span className="popup-icon">
+                {popup.type === 'cart' && '🛒'}
+                {popup.type === 'quote' && '📋'}
+                {popup.type === 'error' && '❌'}
+                {popup.type === 'success' && '✅'}
+              </span>
+              {popup.message}
+            </div>
+            
+            {popup.type === 'cart' && popup.action && (
+              <div className="popup-actions">
+                <button 
+                  className="popup-action-button"
+                  onClick={popup.action}
+                >
+                  Go to Cart
+                </button>
+                <button 
+                  className="popup-close-button"
+                  onClick={handlePopupClose}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+            
+            {popup.type !== 'cart' && (
+              <button 
+                className="popup-close-button"
+                onClick={handlePopupClose}
+              >
+                ×
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -300,14 +368,14 @@ const ProductDetail = () => {
                 onClick={() => addToCart(product)} 
                 disabled={actionLoading}
               >
-                <span>{actionLoading ? 'Adding...' : 'Add to Quote'}</span>
+                <span>{actionLoading ? 'Adding...' : 'Add to Cart'}</span>
               </button>
               <button 
                 className="quote-button" 
                 onClick={() => addToQuoteRequest(product)} 
                 disabled={actionLoading}
               >
-                <span>{actionLoading ? 'Requesting...' : 'Request Quote'}</span>
+                <span>{actionLoading ? 'Requesting...' : 'Add to Quote'}</span>
               </button>
             </div>
           </div>

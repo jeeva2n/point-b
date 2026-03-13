@@ -69,7 +69,6 @@ function FlawedSpecimens({ category: initialCategory }) {
       pageDescriptions={pageDescriptions}
       badgeText="NDT TRAINING & VALIDATION"
       initialCategory={initialCategory}
-      // No need to pass config - it will use API_URL from environment
     />
   );
 }

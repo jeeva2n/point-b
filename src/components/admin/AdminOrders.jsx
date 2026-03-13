@@ -223,7 +223,6 @@ const AdminOrders = () => {
                   </div>
                 )}
               </div>
-
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px'}}>
                 <div>
                   <h4 style={{borderBottom:'1px solid #eee', paddingBottom:'5px'}}>Customer Info</h4>

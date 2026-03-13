@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaInfoCircle, FaUserTie, FaHome, FaShoppingCart } from "react-icons/fa";
+import { FaLinkedin, FaWhatsapp, FaFacebookF } from "react-icons/fa";
 import "./Header.css";
 import daksLogo from '../assets/primary/daks.png';
 import h4 from '../assets/primary/h4.png';
@@ -25,7 +26,7 @@ function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const contactPanelRef = useRef(null);
-  const backendUrl = localStorage.getItem("backend_url") || "http://192.168.1.16:5001";
+  const backendUrl = localStorage.getItem("backend_url") || '';
 
   const closeAllMenus = () => {
     setMegaMenuOpen(null);
@@ -353,47 +354,213 @@ function Header() {
           </div>
         </div>
 
-        {/* Contact Panel Dropdown */}
         <div
           className={`contact-panel-dropdown ${contactOpen ? 'show' : ''}`}
           ref={contactPanelRef}
         >
-          {/* 1. DAKS NDT SERVICES PROFILE */}
-          <div className="contact-company-info">
-            <h3 className="company-title">DAKS NDT Services</h3>
-            <p className="company-subtitle">Advanced Non-Destructive Testing Solutions • Inspection • Safety • Reliability</p>
-            <p className="contact-label">Address</p>
-            <p>Babu Garden, No.163,<br />Narasimman Street, 2nd St,<br />Sikkarayapuram, Tamil Nadu 600128<br />India</p>
-            <p className="contact-label">Phone</p><p>087784 23621</p>
-            <p className="contact-label">Email</p><p>sales@dakstools.com</p>
-            <p className="contact-label">Hours</p><p>Open 24 Hours</p>
+          {/* Left Column: DAKS TOOLS Contact Info */}
+          <div className="cp-left-column">
+            <h3 className="cp-company-title">DAKS TOOLS</h3>
+            <p className="cp-company-subtitle">A Brand of ALPHA SONIX NDT SOLUTIONS PVT LTD</p>
+
+            <div className="cp-details-list">
+              <div className="cp-detail-item">
+                <span className="cp-detail-label">Address</span>
+                <div className="cp-detail-content">
+                  <p>Babu Garden, No.163,</p>
+                  <p>Narasimman Street, 2nd St,</p>
+                  <p>Sikkarayapuram, Tamil Nadu 600128</p>
+                  <p>India</p>
+                </div>
+              </div>
+
+              <div className="cp-detail-item">
+                <span className="cp-detail-label">Office Landline</span>
+                <div className="cp-detail-content">
+                  <p>+91 44 4501 5884</p>
+                </div>
+              </div>
+
+              <div className="cp-detail-item">
+                <span className="cp-detail-label">E-mail</span>
+                <div className="cp-detail-content">
+                  <p>General: admin@dakstools.com</p>
+                  <p>Sales: sales@dakstools.com</p>
+                </div>
+              </div>
+
+              <div className="cp-detail-item">
+                <span className="cp-detail-label">WhatsApp</span>
+                <div className="cp-detail-content">
+                  <p>087784 23621</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Social Links */}
+            <div className="cp-social-links">
+              <a
+                href="https://in.linkedin.com/company/daks-tools"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cp-social-icon cp-social-linkedin"
+                aria-label="LinkedIn"
+                title="LinkedIn"
+              >
+                <FaLinkedin />
+              </a>
+              <a
+                href="https://wa.me/8778423621"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cp-social-icon cp-social-whatsapp"
+                aria-label="WhatsApp"
+                title="WhatsApp"
+              >
+                <FaWhatsapp />
+              </a>
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cp-social-icon cp-social-facebook"
+                aria-label="Facebook"
+                title="Facebook"
+              >
+                <FaFacebookF />
+              </a>
+              <a
+                href="https://www.alphasonix.in/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cp-social-icon cp-social-alphasnx"
+                aria-label="Alpha Sonix"
+                title="Alpha Sonix"
+              >
+                <span className="cp-as-icon">AS</span>
+              </a>
+            </div>
           </div>
 
-          {/* 2. === SECOND COMPANY PROFILE (EDIT HERE) === */}
-          <div className="contact-company-info">
-            <h3 className="company-title">Alpha Sonix NDT Solutions</h3>
-            <p className="company-subtitle">Smart NDT Solutions • Insight Beyond the Surface • Built on Reliability</p>
-            <p className="contact-label">Address</p>
-            <p>Babu Garden, No.163,<br />Narasimman Street, 2nd St,<br />Sikkarayapuram, Tamil Nadu 600128<br />India</p>
-            <p className="contact-label">Phone</p><p>087784 23621</p>
-            <p className="contact-label">Email</p><p>sales@dakstools.com</p>
-            <p className="contact-label">Hours</p><p>Open 24 Hours</p>
+          {/* Middle Column: Get in Touch Section with LONG IMAGES */}
+          <div className="cp-middle-column">
+            <div className="cp-touch-header">
+              <h4 className="cp-touch-title">GET IN TOUCH WITH US</h4>
+              <p className="cp-touch-subtitle">DAKS TOOLS NDT SERVICES</p>
+            </div>
+
+            <hr className="cp-divider" />
+
+            {/* Long Image Items */}
+            <div className="cp-image-items">
+              {/* Item 1 */}
+              <div className="cp-image-item">
+                <div className="cp-image-wrapper">
+                  <img src={h1} alt="NDT Inspection Support" className="cp-image" />
+                </div>
+                <div className="cp-image-content">
+                  <h4 className="cp-image-title">NDT Inspection Support</h4>
+                  <p className="cp-image-desc">Fast and reliable service.</p>
+                </div>
+              </div>
+
+              <hr className="cp-divider" />
+
+              {/* Item 2 */}
+              <div className="cp-image-item">
+                <div className="cp-image-wrapper">
+                  <img src={h2} alt="Service Areas" className="cp-image" />
+                </div>
+                <div className="cp-image-content">
+                  <h4 className="cp-image-title">Service Areas</h4>
+                  <p className="cp-image-desc">We provide on-site NDT services.</p>
+                </div>
+              </div>
+
+              <hr className="cp-divider" />
+
+              {/* Item 3 */}
+              <div className="cp-image-item">
+                <div className="cp-image-wrapper">
+                  <img src={h3} alt="Careers" className="cp-image" />
+                </div>
+                <div className="cp-image-content">
+                  <h4 className="cp-image-title">Join our professional team.</h4>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* 3. GET IN TOUCH IMAGES */}
-          <div className="contact-get-in-touch">
-            <h3>Get in Touch With Us</h3>
-            <div className="contact-panel-item">
-              <img src={h1} alt="Support" className="contact-item-image" />
-              <div><h4>NDT Inspection Support</h4><p>Fast and reliable service.</p></div>
+          {/* Right Column: Quality Highlights */}
+          <div className="cp-right-column">
+            <div className="cp-quality-header">
+              <h4 className="cp-quality-title">Our Quality Commitment</h4>
+              <p className="cp-quality-subtitle">Building Trust Through Excellence</p>
             </div>
-            <div className="contact-panel-item">
-              <img src={h2} alt="Areas" className="contact-item-image" />
-              <div><h4>Service Areas</h4><p>We provide on-site NDT services.</p></div>
+
+            <hr className="cp-divider" />
+
+            {/* Quality Highlights Grid */}
+            <div className="cp-quality-grid">
+              <div className="cp-quality-item">
+                <div className="cp-quality-icon-box">
+                  <span className="cp-quality-emoji">🏆</span>
+                </div>
+                <div className="cp-quality-content">
+                  <h5 className="cp-quality-name">Proven Performance</h5>
+                  <p className="cp-quality-desc">Delivering consistent results across all projects</p>
+                </div>
+              </div>
+
+              <div className="cp-quality-item">
+                <div className="cp-quality-icon-box">
+                  <span className="cp-quality-emoji">📊</span>
+                </div>
+                <div className="cp-quality-content">
+                  <h5 className="cp-quality-name">Consistent Output</h5>
+                  <p className="cp-quality-desc">Reliable and repeatable inspection outcomes</p>
+                </div>
+              </div>
+
+              <div className="cp-quality-item">
+                <div className="cp-quality-icon-box">
+                  <span className="cp-quality-emoji">✅</span>
+                </div>
+                <div className="cp-quality-content">
+                  <h5 className="cp-quality-name">Industry-Certified</h5>
+                  <p className="cp-quality-desc">Compliant with global NDT standards</p>
+                </div>
+              </div>
+
+              <div className="cp-quality-item">
+                <div className="cp-quality-icon-box">
+                  <span className="cp-quality-emoji">📈</span>
+                </div>
+                <div className="cp-quality-content">
+                  <h5 className="cp-quality-name">Long-Term Stability</h5>
+                  <p className="cp-quality-desc">Sustainable solutions for continuous operation</p>
+                </div>
+              </div>
+
+              <div className="cp-quality-item">
+                <div className="cp-quality-icon-box">
+                  <span className="cp-quality-emoji">🔍</span>
+                </div>
+                <div className="cp-quality-content">
+                  <h5 className="cp-quality-name">Trusted Inspection</h5>
+                  <p className="cp-quality-desc">Accurate assessment with proven methodologies</p>
+                </div>
+              </div>
             </div>
-            <div className="contact-panel-item">
-              <img src={h3} alt="Career" className="contact-item-image" />
-              <div><h4>Careers</h4><p>Join our professional team.</p></div>
+
+            {/* Additional Info */}
+            <div className="cp-additional-info">
+              <div className="cp-info-tags">
+                <span className="cp-info-tag">Premium Quality</span>
+                <span className="cp-info-tag">Certified Experts</span>
+                <span className="cp-info-tag">On-Time Delivery</span>
+              </div>
+              <p className="cp-info-note">Contact us for certified NDT solutions and reliable inspection services</p>
             </div>
           </div>
         </div>

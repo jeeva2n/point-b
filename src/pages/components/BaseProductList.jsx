@@ -1,10 +1,9 @@
 // components/BaseProductList.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { API_URL } from '../../config/api';
+import { API_URL, getImageUrl } from '../../config/api';
 import styles from "../css/ProductsGrid.module.css"; 
 
-// ... (Icons remain the same) ...
 export const Icons = {
   Search: () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -59,31 +58,34 @@ export const Icons = {
 };
 
 // Shared Image Helper Function - Now uses API_URL from config
-export const getImageSrc = (product, backendUrl = API_URL) => {
+export const getImageSrc = (product) => {
   if (!product) return "/images/placeholder.jpg";
 
-  let imagePath = 
-    product.image_url || 
-    product.mainImage || 
+  let imagePath =
+    product.image_url ||
+    product.mainImage ||
     (product.images && product.images.length > 0 ? product.images[0] : null);
 
   if (!imagePath) return "/images/placeholder.jpg";
 
-  if (typeof imagePath === 'object') {
-    if (imagePath.url) imagePath = imagePath.url;
-    else if (imagePath.path) imagePath = imagePath.path;
-    else return "/images/placeholder.jpg";
+  if (typeof imagePath === "object") {
+    imagePath = imagePath.url || imagePath.path;
   }
 
-  const pathString = String(imagePath);
+  if (!imagePath) return "/images/placeholder.jpg";
 
-  if (pathString.startsWith("http") || pathString.startsWith("blob:")) {
-    return pathString;
+  if (imagePath.startsWith("http") || imagePath.startsWith("blob:")) {
+    return imagePath;
   }
 
-  const cleanPath = pathString.startsWith("/") ? pathString : `/${pathString}`;
-  return `${backendUrl}${cleanPath}`;
+  const cleanPath = imagePath.startsWith("/")
+    ? imagePath
+    : `/${imagePath}`;
+
+  // IMPORTANT: images are served from root, NOT /api
+  return `${window.location.origin}${cleanPath}`;
 };
+
 
 // Shared Material Helper Function
 export const getMaterialString = (material) => {
@@ -294,14 +296,14 @@ export const BaseProductList = ({
                       className={styles.productImage}
                       onClick={() => handleViewDetails(product)}
                     >
-                      <img
-                        src={getImageSrc(product, BACKEND_URL)}
-                        alt={product.name}
-                        loading="lazy"
-                        onError={(e) => {
-                          e.target.src = "/images/placeholder.jpg";
-                        }}
-                      />
+                   <img
+  src={getImageUrl(product.image_url || product.mainImage)}
+  alt={product.name}
+  loading="lazy"
+  onError={(e) => {
+    e.target.src = "/images/placeholder.jpg";
+  }}
+/>
                     </div>
 
                     {/* Info Section */}
