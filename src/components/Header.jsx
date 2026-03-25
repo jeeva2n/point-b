@@ -4,7 +4,6 @@ import { FaInfoCircle, FaUserTie, FaHome, FaShoppingCart } from "react-icons/fa"
 import { FaLinkedin, FaWhatsapp, FaFacebookF } from "react-icons/fa";
 import "./Header.css";
 import daksLogo from '../assets/primary/daks.png';
-import h4 from '../assets/primary/h4.png';
 import h3 from '../assets/primary/h3.png';
 import h2 from '../assets/primary/h2.png';
 import h1 from '../assets/primary/h1.png';

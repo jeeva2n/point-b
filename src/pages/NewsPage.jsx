@@ -3,72 +3,72 @@ import './css/NewsPage.css';
 
 const NewsPage = () => {
   const [news, setNews] = useState([
-    {
-      id: 1,
-      title: "New Ultrasonic Testing Technology Launched",
-      category: "Technology",
-      date: "Dec 15, 2024",
-      author: "Sarah Chen",
-      excerpt: "We're excited to announce our latest breakthrough in ultrasonic testing technology with enhanced defect detection capabilities.",
-      content: "Our R&D team has developed a new ultrasonic testing system that improves defect detection accuracy by 40%. The technology incorporates AI-based signal processing and real-time data analysis, setting new industry standards for quality assurance in critical infrastructure.",
-      image: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=800&h=450&fit=crop",
-      tags: ["Technology", "Innovation", "NDT"]
-    },
-    {
-      id: 2,
-      title: "Global Expansion: New Office in Singapore",
-      category: "Business",
-      date: "Nov 28, 2024",
-      author: "Michael Rodriguez",
-      excerpt: "We're expanding our global presence with a new regional headquarters in Singapore.",
-      content: "To better serve our clients in the Asia-Pacific region, we've opened a new regional headquarters in Singapore. This strategic location will provide enhanced support for oil & gas, marine, and aerospace industries across Southeast Asia.",
-      image: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?w=800&h=450&fit=crop",
-      tags: ["Expansion", "Business", "Global"]
-    },
-    {
-      id: 3,
-      title: "Industry Conference 2024 Highlights",
-      category: "Events",
-      date: "Nov 12, 2024",
-      author: "David Kim",
-      excerpt: "Our team showcased innovative NDT solutions at the International Industry Conference 2024.",
-      content: "We presented three groundbreaking research papers at the International NDT Conference 2024, focusing on digital radiography advancements, automated inspection systems, and sustainable testing methodologies. Our team received the 'Innovation Excellence' award for their contributions.",
-      image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&h=450&fit=crop",
-      tags: ["Conference", "Awards", "Research"]
-    },
-    {
-      id: 4,
-      title: "Partnership with Leading Aerospace Company",
-      category: "Partnerships",
-      date: "Oct 30, 2024",
-      author: "Lisa Anderson",
-      excerpt: "We've entered a strategic partnership with a major aerospace manufacturer.",
-      content: "This partnership will focus on developing next-generation inspection systems for aircraft components. The collaboration combines our NDT expertise with their aerospace manufacturing knowledge to enhance safety and reliability in aviation.",
-      image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&h=450&fit=crop",
-      tags: ["Partnership", "Aerospace", "Collaboration"]
-    },
-    {
-      id: 5,
-      title: "New Training Facility Opens",
-      category: "Education",
-      date: "Oct 18, 2024",
-      author: "Priya Sharma",
-      excerpt: "State-of-the-art training center now operational for NDT certification programs.",
-      content: "Our new 10,000 sq ft training facility features advanced simulation labs, digital classrooms, and hands-on testing stations. The center offers ASNT-certified training programs and continuous professional development for NDT technicians.",
-      image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=450&fit=crop",
-      tags: ["Training", "Education", "Certification"]
-    },
-    {
-      id: 6,
-      title: "Sustainability Initiatives in NDT",
-      category: "Sustainability",
-      date: "Sep 25, 2024",
-      author: "James Wilson",
-      excerpt: "Implementing eco-friendly practices across our testing methodologies.",
-      content: "We're committed to reducing environmental impact through sustainable NDT practices. Initiatives include developing biodegradable penetrant materials, energy-efficient testing equipment, and recycling programs for testing consumables.",
-      image: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800&h=450&fit=crop",
-      tags: ["Sustainability", "Environment", "Innovation"]
-    }
+{
+    id: 1,
+    title: "Revolutionary Phased Array Ultrasonic Technology Unveiled",
+    category: "Technology",
+    date: "Dec 15, 2024",
+    author: "Dr. Sarah Chen",
+    excerpt: "Next-generation PAUT system delivers unprecedented resolution in flaw detection and sizing accuracy.",
+    content: "Our R&D team has developed a breakthrough phased array ultrasonic technology that achieves 0.1mm resolution in flaw characterization. The system incorporates advanced Full Matrix Capture (FMC) and Total Focusing Method (TFM) algorithms, enabling inspectors to visualize defects with surgical precision in aerospace composites and critical weld inspections.",
+    image: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=800&h=450&fit=crop",
+    tags: ["Phased Array", "Ultrasonic", "Innovation", "NDT 4.0"]
+  },
+  {
+    id: 2,
+    title: "Strategic Expansion: Asia-Pacific NDT Hub Opens in Singapore",
+    category: "Business",
+    date: "Nov 28, 2024",
+    author: "Michael Rodriguez",
+    excerpt: "New regional headquarters strengthens support for oil & gas, marine, and aerospace sectors across Southeast Asia.",
+    content: "To better serve our growing client base in the Asia-Pacific region, we've inaugurated a new 15,000 sq ft facility in Singapore. The hub features a fully equipped calibration laboratory, training center, and technical support team dedicated to serving the region's offshore, marine, and aerospace industries with localized ASME and ISO reference standards.",
+    image: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?w=800&h=450&fit=crop",
+    tags: ["Expansion", "Asia-Pacific", "Business", "Global Reach"]
+  },
+  {
+    id: 3,
+    title: "ASNT Conference 2024: NDT Tools Wins Innovation Excellence Award",
+    category: "Events",
+    date: "Nov 12, 2024",
+    author: "David Kim",
+    excerpt: "Groundbreaking research in AI-assisted defect recognition earns top industry recognition.",
+    content: "At the ASNT Annual Conference 2024, our team presented three pioneering research papers on machine learning applications in ultrasonic data interpretation, advanced digital radiography for additive manufacturing, and sustainable NDT practices. Our presentation on 'Deep Learning for Automated Flaw Classification in Aerospace Components' received the prestigious 'Innovation Excellence' award, recognizing our contribution to advancing NDT technology.",
+    image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&h=450&fit=crop",
+    tags: ["ASNT", "Awards", "Research", "AI in NDT"]
+  },
+  {
+    id: 4,
+    title: "Strategic Partnership with Boeing Advances Aerospace NDT Standards",
+    category: "Partnerships",
+    date: "Oct 30, 2024",
+    author: "Lisa Anderson",
+    excerpt: "Collaboration to develop next-generation inspection protocols for composite aircraft structures.",
+    content: "We've entered a landmark partnership with Boeing Commercial Airplanes to develop advanced NDT reference standards for next-generation composite aircraft structures. The collaboration focuses on creating customized ultrasonic and thermographic inspection procedures for carbon fiber components, enhancing safety and reliability in modern aviation manufacturing.",
+    image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&h=450&fit=crop",
+    tags: ["Aerospace", "Partnership", "Composite Inspection", "Boeing"]
+  },
+  {
+    id: 5,
+    title: "World-Class NDT Training Center: ASNT Level III Certification Now Available",
+    category: "Education",
+    date: "Oct 18, 2024",
+    author: "Priya Sharma",
+    excerpt: "State-of-the-art facility offers hands-on training with live flaw specimens and real-world scenarios.",
+    content: "Our newly inaugurated 12,000 sq ft NDT Training Academy features dedicated labs for ultrasonic, radiographic, eddy current, and penetrant testing. The facility houses over 500 engineered flaw specimens, enabling technicians to experience real-world inspection challenges. ASNT-certified Level III instructors lead comprehensive programs in accordance with SNT-TC-1A and CP-189 requirements, preparing the next generation of NDT professionals.",
+    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=450&fit=crop",
+    tags: ["Training", "ASNT Level III", "Certification", "Education"]
+  },
+  {
+    id: 6,
+    title: "Green NDT Initiative: Eco-Friendly Testing Solutions Launch",
+    category: "Sustainability",
+    date: "Sep 25, 2024",
+    author: "James Wilson",
+    excerpt: "Biodegradable penetrants and recyclable reference materials mark commitment to environmental stewardship.",
+    content: "In alignment with global sustainability goals, we've launched our 'Green NDT' initiative featuring bio-based penetrant materials with 98% biodegradability, energy-efficient ultrasonic pulsers reducing power consumption by 35%, and a comprehensive recycling program for used calibration blocks. These innovations maintain rigorous testing standards while significantly reducing environmental footprint across NDT operations.",
+    image: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800&h=450&fit=crop",
+    tags: ["Sustainability", "Green Technology", "Eco-Friendly", "Innovation"]
+  }
   ]);
 
   const [selectedNews, setSelectedNews] = useState(null);

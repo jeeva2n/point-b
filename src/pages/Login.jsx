@@ -54,7 +54,6 @@ const Login = () => {
     }
 
     setLoading(true);
-    setError('');
 
     try {
       const response = await fetch(`${API_URL}/api/auth/verify-otp`, {
@@ -69,8 +68,6 @@ const Login = () => {
       });
 
       const data = await response.json();
-      console.log('Verify OTP response:', data); // ADD THIS LINE
-
       if (data.success) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
@@ -78,8 +75,7 @@ const Login = () => {
       } else {
         setError(data.message || 'Invalid OTP');
       }
-    } catch (err) {
-      console.error('Verify OTP error:', err); // ADD THIS LINE
+    } catch {
       setError('Verification error. Please try again.');
     } finally {
       setLoading(false);

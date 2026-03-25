@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(!!token);
     setLoading(false);
   };
-
+                       
   const login = (token) => {
     localStorage.setItem('adminToken', token);
     setIsAuthenticated(true);
