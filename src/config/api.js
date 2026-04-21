@@ -3,8 +3,8 @@
 // Get API URL from environment variables
 export const API_URL = process.env.REACT_APP_API_URL || 
   (process.env.NODE_ENV === 'production' 
-    ? 'https://dakstools.com'  // Your live domain
-    : 'http://localhost:3000');  // Change from 3000 to 5001!
+    ? 'https://dakstools.com'
+    : 'http://localhost:3000');
 
 export const ENV = process.env.REACT_APP_ENV || process.env.NODE_ENV || 'development';
 
@@ -16,7 +16,7 @@ export const ENDPOINTS = {
   SEND_OTP: `${API_URL}/api/auth/send-otp`,
   VERIFY_OTP: `${API_URL}/api/auth/verify-otp`,
   PRODUCTS: `${API_URL}/api/products`,
-  PRODUCT_BY_ID: (id) => `${API_URL}/api/products/${id}`,
+  PRODUCT_BY_ID: (identifier) => `${API_URL}/api/products/${identifier}`,
   PRODUCTS_BY_TYPE: (type) => `${API_URL}/api/products/by-type/${type}`,
   PRODUCTS_REORDER: `${API_URL}/api/products/reorder`,
   PRODUCTS_SEARCH: (keyword) => `${API_URL}/api/products/search/${keyword}`,

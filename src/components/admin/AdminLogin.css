@@ -42,7 +42,7 @@ body {
 /* Page Container */
 .admin-login-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
   display: flex;
   flex-direction: column;
 }

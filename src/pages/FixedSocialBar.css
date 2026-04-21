@@ -1,0 +1,57 @@
+.fixed-social-bar {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background-color: transparent; /* or your preferred bg color */
+  padding: 10px;
+  z-index: 1000;
+}
+
+.fixed-social-bar .social-icon {
+  color: #ffffff;
+  font-size: 24px;
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: color 0.3s ease;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.fixed-social-bar .social-icon:hover.linkedin {
+  color: #0077b5; /* LinkedIn blue */
+}
+
+.fixed-social-bar .social-icon:hover.whatsapp {
+  color: #25d366; /* WhatsApp green */
+}
+
+.fixed-social-bar .social-icon:hover.facebook {
+  color: #3b5998; /* Facebook blue */
+}
+
+.fixed-social-bar .social-icon.alpha-sonix {
+  font-weight: bold;
+  font-size: 16px;
+  color: #555555;
+  background: #fff;
+  border: 1px solid #555;
+}
+
+.fixed-social-bar .social-icon.alpha-sonix:hover {
+  background: #555555;
+  color: #fff;
+}
+
+.as-icon {
+  font-weight: 700;
+  font-size: 16px;
+}

@@ -14,16 +14,23 @@ function ProductModal({ productId, onClose }) {
 
   const fetchProductDetails = async () => {
     try {
+      // UPDATED: Handle both ID and slug
+      console.log('🔍 Modal fetching product:', productId); // Debug log
+      
       const response = await fetch(`${API_URL}/api/products/${productId}`);
       const data = await response.json();
-      console.log('Product details:', data); // Debug log
+      
+      console.log('🔍 Modal product response:', data); // Debug log
       
       if (data.success) {
         setProduct(data.product);
-      }   
+        console.log('✅ Modal product loaded:', data.product.name);
+      } else {
+        console.log('❌ Modal product not found');
+      }
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching product details:', error);
+      console.error('❌ Error fetching product details:', error);
       setLoading(false);
     }
   };
@@ -82,7 +89,7 @@ function ProductModal({ productId, onClose }) {
         <div className="modal-body">
           <div className="modal-image">
             <img 
-              src={getImageUrl(product.image_url)} 
+              src={getImageUrl(product.mainImage || product.image_url)} 
               alt={product.name}
               onError={(e) => {
                 e.target.src = '/placeholder-image.jpg';
@@ -107,14 +114,7 @@ function ProductModal({ productId, onClose }) {
                 </>
               )}
               
-              {/* {product.price > 0 && (
-                <div className="product-price">
-                  <h3>Price</h3>
-                  <p className="price-value">₹{product.price.toLocaleString()}</p>
-                </div>
-              )} */}
-              
-                         <div className="product-status">
+              <div className="product-status">
                 <span className={`status-badge ${product.in_stock ? 'in-stock' : 'out-of-stock'}`}>
                   {product.in_stock ? 'In Stock' : 'Out of Stock'}
                 </span>
@@ -123,6 +123,10 @@ function ProductModal({ productId, onClose }) {
               <div className="product-meta">
                 <p><strong>Product Type:</strong> {product.product_type === 'calibration_blocks' ? 'Calibration Block' : 'Flawed Specimen'}</p>
                 <p><strong>Added:</strong> {new Date(product.created_at).toLocaleDateString()}</p>
+                {/* UPDATED: Show slug if available */}
+                {product.slug && (
+                  <p><strong>Product URL:</strong> /product/{product.slug}</p>
+                )}
               </div>
             </div>
             

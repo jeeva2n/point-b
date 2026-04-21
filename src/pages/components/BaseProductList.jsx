@@ -2,6 +2,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL, getImageUrl } from '../../config/api';
+import { slugify } from '../../utils/slugify';
+import { Helmet } from 'react-helmet-async';
+
 import styles from "../css/ProductsGrid.module.css"; 
 
 export const Icons = {
@@ -57,7 +60,7 @@ export const Icons = {
   )
 };
 
-// Shared Image Helper Function - Now uses API_URL from config
+// Shared Image Helper Function
 export const getImageSrc = (product) => {
   if (!product) return "/images/placeholder.jpg";
 
@@ -82,10 +85,8 @@ export const getImageSrc = (product) => {
     ? imagePath
     : `/${imagePath}`;
 
-  // IMPORTANT: images are served from root, NOT /api
   return `${window.location.origin}${cleanPath}`;
 };
-
 
 // Shared Material Helper Function
 export const getMaterialString = (material) => {
@@ -113,10 +114,28 @@ export const BaseProductList = ({
   const navigate = useNavigate();
   const productCardsRef = useRef([]);
 
-  // Use API_URL from config, with fallback to passed config or environment
   const BACKEND_URL = config.BACKEND_URL || API_URL;
 
-  // Calculate filteredProducts here (BEFORE any effects)
+  // Helper functions (defined INSIDE component)
+  const getCurrentPageTitle = () => {
+    if (selectedCategory && selectedCategory !== "All") {
+      return selectedCategory;
+    }
+    return pageTitle;
+  };
+
+  const getCurrentPageDescription = () => {
+    return pageDescriptions[selectedCategory] || pageDescriptions["All"];
+  };
+
+  // SEO Data (defined INSIDE component, after helpers)
+  const categorySeoData = {
+    title: `${getCurrentPageTitle()} | DAKS Tools Chennai – NDT Products`,
+    description: getCurrentPageDescription(),
+    canonicalUrl: `https://dakstools.com${categoryUrlMap[selectedCategory] || categoryUrlMap["All"]}`,
+    ogImage: `https://dakstools.com/images/${productType === 'calibration_block' ? 'reference' : productType === 'flawed_specimen' ? 'flawed' : 'validation'}.jpg`
+  };
+
   const filteredProducts = products.filter((product) => {
     const matchesCategory =
       selectedCategory === "All" || product.category === selectedCategory;
@@ -133,7 +152,6 @@ export const BaseProductList = ({
     fetchProducts();
   }, [productType]);
 
-  // Scroll reveal animation using refs - SIMPLE VERSION
   useEffect(() => {
     const handleScroll = () => {
       productCardsRef.current.forEach((card) => {
@@ -147,7 +165,6 @@ export const BaseProductList = ({
     };
 
     window.addEventListener("scroll", handleScroll);
-    // Initial check after a short delay
     setTimeout(handleScroll, 100);
     
     return () => {
@@ -180,7 +197,8 @@ export const BaseProductList = ({
   };
 
   const handleViewDetails = (product) => {
-    navigate(`/product/${product.id}`);
+    const slug = slugify(product.name);
+    navigate(`/product/${slug}`);
   };
 
   const clearFilters = () => {
@@ -189,187 +207,202 @@ export const BaseProductList = ({
     navigate(categoryUrlMap["All"]);
   };
 
-  const getCurrentPageTitle = () => {
-    if (selectedCategory && selectedCategory !== "All") {
-      return selectedCategory;
-    }
-    return pageTitle;
-  };
-
-  const getCurrentPageDescription = () => {
-    return pageDescriptions[selectedCategory] || pageDescriptions["All"];
-  };
-
   return (
-    <div className={styles.container}>
-      <div className={styles.pageWrapper}>
-        {/* Page Header */}
-        <div className={styles.pageHeader}>
-          <div className={styles.headerContent}>
-            <span className={styles.headerBadge}>{badgeText}</span>
-            <h1>{getCurrentPageTitle()}</h1>
-            <p>{getCurrentPageDescription()}</p>
-          </div>
-        </div>
+    <>
+      {/* ==========================================
+           SEO - REACT HELMET FOR CATEGORY PAGES
+      ========================================== */}
+      <Helmet>
+        <title>{categorySeoData.title}</title>
+        <meta name="description" content={categorySeoData.description} />
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+        <link rel="canonical" href={categorySeoData.canonicalUrl} />
+        
+        <meta name="geo.region" content="IN-TN" />
+        <meta name="geo.placename" content="Chennai" />
+        <meta name="geo.position" content="13.00938;80.10521" />
+        
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={categorySeoData.canonicalUrl} />
+        <meta property="og:title" content={categorySeoData.title} />
+        <meta property="og:description" content={categorySeoData.description} />
+        <meta property="og:image" content={categorySeoData.ogImage} />
+        <meta property="og:image:alt" content={`DAKS Tools ${getCurrentPageTitle()} - NDT Products Chennai`} />
+        <meta property="og:site_name" content="DAKS Tools" />
+        <meta property="og:locale" content="en_IN" />
+        
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={categorySeoData.title} />
+        <meta name="twitter:description" content={categorySeoData.description} />
+        <meta name="twitter:image" content={categorySeoData.ogImage} />
+      </Helmet>
 
-        {/* Breadcrumb */}
-        {selectedCategory !== "All" && (
-          <div className={styles.breadcrumb}>
-            <span
-              onClick={() => navigate(categoryUrlMap["All"])}
-              className={styles.breadcrumbLink}
-            >
-              {pageTitle}
-            </span>
-            <span className={styles.breadcrumbSeparator}><Icons.ArrowRightSm /></span>
-            <span className={styles.breadcrumbCurrent}>{selectedCategory}</span>
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className={styles.filtersSection}>
-          <div className={styles.filtersHeader}>
-            <h2>Browse {pageTitle}</h2>
-            <p>Find the perfect solution for your NDT requirements</p>
-          </div>
-
-          <div className={styles.searchBar}>
-            <input
-              type="text"
-              placeholder={`Search ${pageTitle.toLowerCase()}...`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={styles.searchInput}
-            />
-            {searchTerm ? (
-              <button className={styles.searchClear} onClick={() => setSearchTerm("")}>
-                <Icons.Close />
-              </button>
-            ) : (
-              <div className={styles.searchIconWrapper}>
-                <Icons.Search />
-              </div>
-            )}
+      <div className={styles.container}>
+        <div className={styles.pageWrapper}>
+          {/* Page Header */}
+          <div className={styles.pageHeader}>
+            <div className={styles.headerContent}>
+              <span className={styles.headerBadge}>{badgeText}</span>
+              <h1>{getCurrentPageTitle()}</h1>
+              <p>{getCurrentPageDescription()}</p>
+            </div>
           </div>
 
-          <div className={styles.categoryFilter}>
-            {categories.map((category) => (
-              <button
-                key={category}
-                className={`${styles.categoryBtn} ${
-                  selectedCategory === category ? styles.active : ""
-                }`}
-                onClick={() => handleCategoryChange(category)}
+          {/* Breadcrumb */}
+          {selectedCategory !== "All" && (
+            <div className={styles.breadcrumb}>
+              <span
+                onClick={() => navigate(categoryUrlMap["All"])}
+                className={styles.breadcrumbLink}
               >
-                {category}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Products Grid */}
-        {loading ? (
-          <div className={styles.loading}>
-            <div className={styles.loadingSpinner}></div>
-            <span>Loading {pageTitle.toLowerCase()}...</span>
-          </div>
-        ) : (
-          <div className={styles.productsContainer}>
-            <div className={styles.resultsHeader}>
-              <span className={styles.resultsCount}>
-                Showing {filteredProducts.length} of {products.length} products
-                {selectedCategory !== "All" && ` in ${selectedCategory}`}
+                {pageTitle}
               </span>
+              <span className={styles.breadcrumbSeparator}><Icons.ArrowRightSm /></span>
+              <span className={styles.breadcrumbCurrent}>{selectedCategory}</span>
+            </div>
+          )}
+
+          {/* Filters */}
+          <div className={styles.filtersSection}>
+            <div className={styles.filtersHeader}>
+              <h2>Browse {pageTitle}</h2>
+              <p>Find the perfect solution for your NDT requirements</p>
             </div>
 
-            {filteredProducts.length > 0 ? (
-              <div className={styles.productsGrid}>
-                {filteredProducts.map((product, index) => (
-                  <div
-                    key={product.id}
-                    ref={(el) => (productCardsRef.current[index] = el)}
-                    className={`${styles.productCard} ${styles.hardwareAccelerated}`}
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    {/* Image Section */}
+            <div className={styles.searchBar}>
+              <input
+                type="text"
+                placeholder={`Search ${pageTitle.toLowerCase()}...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={styles.searchInput}
+              />
+              {searchTerm ? (
+                <button className={styles.searchClear} onClick={() => setSearchTerm("")}>
+                  <Icons.Close />
+                </button>
+              ) : (
+                <div className={styles.searchIconWrapper}>
+                  <Icons.Search />
+                </div>
+              )}
+            </div>
+
+            <div className={styles.categoryFilter}>
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  className={`${styles.categoryBtn} ${
+                    selectedCategory === category ? styles.active : ""
+                  }`}
+                  onClick={() => handleCategoryChange(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Products Grid */}
+          {loading ? (
+            <div className={styles.loading}>
+              <div className={styles.loadingSpinner}></div>
+              <span>Loading {pageTitle.toLowerCase()}...</span>
+            </div>
+          ) : (
+            <div className={styles.productsContainer}>
+              <div className={styles.resultsHeader}>
+                <span className={styles.resultsCount}>
+                  Showing {filteredProducts.length} of {products.length} products
+                  {selectedCategory !== "All" && ` in ${selectedCategory}`}
+                </span>
+              </div>
+
+              {filteredProducts.length > 0 ? (
+                <div className={styles.productsGrid}>
+                  {filteredProducts.map((product, index) => (
                     <div
-                      className={styles.productImage}
-                      onClick={() => handleViewDetails(product)}
+                      key={product.id}
+                      ref={(el) => (productCardsRef.current[index] = el)}
+                      className={`${styles.productCard} ${styles.hardwareAccelerated}`}
+                      style={{ animationDelay: `${index * 0.1}s` }}
                     >
-                   <img
-  src={getImageUrl(product.image_url || product.mainImage)}
-  alt={product.name}
-  loading="lazy"
-  onError={(e) => {
-    e.target.src = "/images/placeholder.jpg";
-  }}
-/>
-                    </div>
-
-                    {/* Info Section */}
-                    <div className={styles.productInfo}>
-                      <span className={styles.productCategoryBadge}>
-                        {product.category}
-                      </span>
-
-                      <h3>{product.name}</h3>
-                      <p className={styles.productDescription}>
-                        {product.description}
-                      </p>
-
-                      <div className={styles.productMeta}>
-                        {(product.materials || product.material) && (
-                          <span className={styles.metaItem}>
-                            <span className={styles.metaIcon}><Icons.Box /></span>
-                            {getMaterialString(product.materials || product.material)}
-                          </span>
-                        )}
-                        {product.dimensions && (
-                          <span className={styles.metaItem}>
-                            <span className={styles.metaIcon}><Icons.Ruler /></span>
-                            {product.dimensions}
-                          </span>
-                        )}
-                        {product.standards && (
-                          <span className={styles.metaItem}>
-                            <span className={styles.metaIcon}><Icons.Clipboard /></span>
-                            {product.standards}
-                          </span>
-                        )}
-                      </div>
-
-                      <button
-                        className={styles.viewDetailsBtn}
+                      <div
+                        className={styles.productImage}
                         onClick={() => handleViewDetails(product)}
                       >
-                        <span>View Details</span>
-                        <span className={styles.btnArrow}><Icons.ArrowRight /></span>
-                      </button>
+                        <img
+                          src={getImageUrl(product.image_url || product.mainImage)}
+                          alt={product.name}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.target.src = "/images/placeholder.jpg";
+                          }}
+                        />
+                      </div>
+
+                      <div className={styles.productInfo}>
+                        <span className={styles.productCategoryBadge}>
+                          {product.category}
+                        </span>
+
+                        <h3>{product.name}</h3>
+                        <p className={styles.productDescription}>
+                          {product.description}
+                        </p>
+
+                        <div className={styles.productMeta}>
+                          {(product.materials || product.material) && (
+                            <span className={styles.metaItem}>
+                              <span className={styles.metaIcon}><Icons.Box /></span>
+                              {getMaterialString(product.materials || product.material)}
+                            </span>
+                          )}
+                          {product.dimensions && (
+                            <span className={styles.metaItem}>
+                              <span className={styles.metaIcon}><Icons.Ruler /></span>
+                              {product.dimensions}
+                            </span>
+                          )}
+                          {product.standards && (
+                            <span className={styles.metaItem}>
+                              <span className={styles.metaIcon}><Icons.Clipboard /></span>
+                              {product.standards}
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          className={styles.viewDetailsBtn}
+                          onClick={() => handleViewDetails(product)}
+                        >
+                          <span>View Details</span>
+                          <span className={styles.btnArrow}><Icons.ArrowRight /></span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className={styles.noProducts}>
-                <div className={styles.noProductsIcon}><Icons.Empty /></div>
-                <h3>
-                  No Results Found
-                </h3>
-                <p>
-                  {products.length === 0
-                    ? `No ${pageTitle.toLowerCase()} available.`
-                    : "No products match your current search criteria."}
-                </p>
-                {products.length > 0 && (
-                  <button className={styles.resetBtn} onClick={clearFilters}>
-                    Clear Filters & Show All
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.noProducts}>
+                  <div className={styles.noProductsIcon}><Icons.Empty /></div>
+                  <h3>No Results Found</h3>
+                  <p>
+                    {products.length === 0
+                      ? `No ${pageTitle.toLowerCase()} available.`
+                      : "No products match your current search criteria."}
+                  </p>
+                  {products.length > 0 && (
+                    <button className={styles.resetBtn} onClick={clearFilters}>
+                      Clear Filters & Show All
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };

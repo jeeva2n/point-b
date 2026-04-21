@@ -8,6 +8,7 @@ import Quickcontact from './pages/Quickcontact';
 import './App.css';
 import Cart from './pages/Cart';
 import Login from './pages/Login';
+import FixedSocialBar from "./pages/FixedSocialBar";
 import Account from './pages/Account';
 import AdminOrders from './components/admin/AdminOrders';
 import OrderDetail from './components/OrderDetail';
@@ -20,6 +21,7 @@ import NewsPage from './pages/NewsPage';
 import CorporateValues from './pages/CorporateValues';
 import CSRActivity from './pages/CSRActivity';
 import OurTeam from './pages/OurTeam';
+import { useLocation } from "react-router-dom";
 
 // Lazy-loaded pages
 const Home = lazy(() => import('./pages/Home'));
@@ -45,15 +47,36 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function Layout() {
+  const location = useLocation();
+
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+      </Routes>
+
+      {/* Hide footer only on Home */}
+      {location.pathname !== "/" && <Footer />}
+    </>
+  );
+}
+
 // Loading component
 function LoadingFallback() {
   return <div className="loading"></div>;
 }
 
 function App() {
+  const location = useLocation();
+  const hideFooterRoutes = ["/", "/home"];
   return (
+
     <div className="app">
       <Header />
+      <FixedSocialBar />
+
       <main className="main-content">
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
@@ -63,10 +86,13 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/home" element={<Home />} />
 
+
             {/* Product Detail Route */}
-            <Route path="/product/:productId" element={<ProductDetail />} />
+            <Route path="/product/:identifier" element={<ProductDetail />} />
             <Route path="/order/:orderId" element={<OrderDetail />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
+
+
 
             {/* ==========================================
                 REFERENCE STANDARDS ROUTES
@@ -86,6 +112,7 @@ function App() {
             {/* ==========================================
                 FLAWED SPECIMENS ROUTES
             ========================================== */}
+
             <Route path="/flawed-specimens" element={<FlawedSpecimens />} />
             <Route path="/flawed-specimens/training-examination" element={<FlawedSpecimens category="Training and Examination Flawed specimens" />} />
             <Route path="/flawed-specimens/ultrasonic" element={<FlawedSpecimens category="Ultrasonic Testing Flawed specimens" />} />
@@ -108,18 +135,21 @@ function App() {
             <Route path="/flawed-specimens/pod-training" element={<FlawedSpecimens category="POD & Training Specimens" />} />
 
             {/* ==========================================
-                VALIDATION BLOCKS ROUTES
-            ========================================== */}
+    VALIDATION BLOCKS ROUTES
+========================================== */}
             <Route path="/validation-blocks" element={<ValidationBlocks />} />
             <Route path="/validation-blocks/ut" element={<ValidationBlocks category="UT Validation Blocks" />} />
             <Route path="/validation-blocks/paut-tofd" element={<ValidationBlocks category="PAUT and ToFD Validation Blocks" />} />
             <Route path="/validation-blocks/boiler-tube" element={<ValidationBlocks category="Boiler Tube PAUT Validation Blocks" />} />
+            <Route path="/validation-blocks/ut-custom" element={<ValidationBlocks category="UT Custom Blocks" />} />
 
             {/* ==========================================
                 RESOURCES ROUTES
             ========================================== */}
             <Route path="/resources" element={<Gallery />} />
             <Route path="/resources/gallery" element={<Gallery />} />
+            <Route path="/news" element={<NewsPage />} />
+            <Route path="/blog" element={<Blog />} />
 
             {/* ==========================================
                 COMPANY ROUTES
@@ -128,27 +158,18 @@ function App() {
             <Route path="/company/about" element={<AboutUs />} />
             <Route path="/company/team" element={<OurTeam />} />
             <Route path="/company/business-partners" element={<BusinessPartners />} />
+            <Route path="/cvalues" element={<CorporateValues />} />
+            <Route path="/csra" element={<CSRActivity />} />
 
             {/* ==========================================
                 CONTACT
             ========================================== */}
-         <Route path="/quickcontact" element={<Quickcontact />} />
-         <Route path="/news" element={<NewsPage />} />
-         <Route path="/blog" element={<Blog />} />
-         <Route path="/cvalues" element={<CorporateValues />} />
-         <Route path="/csra" element={<CSRActivity />} />
+            <Route path="/quickcontact" element={<Quickcontact />} />
 
-            {/* ==========================================
-                OTHER PAGES
-            ========================================== */}
-            {/* <Route path="/product-catalogue" element={<ProductCatalogue />} /> */}
-            {/* <Route path="/career" element={<Career />} /> */}
-            {/* <Route path="/blog" element={<Blog />} /> */}
-            {/* <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/downloads-docs" element={<DownloadsDocs />} />
-            <Route path="/reach-out" element={<ReachOut />} /> */}
+
+
             <Route path="/cart" element={<Cart />} />
-            
+
 
             {/* ==========================================
                 USER ROUTES
@@ -194,7 +215,9 @@ function App() {
           </Routes>
         </Suspense>
       </main>
-      <Footer />
+
+      {/* 👇 THIS IS THE IMPORTANT PART */}
+      {!hideFooterRoutes.includes(location.pathname) && <Footer />}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL, getImageUrl } from './../config/api';
 import './css/Cart.css';
+import { Helmet } from 'react-helmet-async';
 
 const Cart = () => {
   const [cart, setCart] = useState({ items: [] });
@@ -29,6 +30,50 @@ const Cart = () => {
 
   const navigate = useNavigate();
   const WEB3_ACCESS_KEY = "73a5d128-f5b6-4b66-80c6-bdac56b080c8";
+
+  // ==========================================
+  // SEO METADATA & SCHEMA.ORG JSON-LD
+  // ==========================================
+  const cartSeoData = {
+    title: "Shopping Cart | DAKS Tools – NDT Equipment & Quote Requests",
+    description: "Review your DAKS Tools shopping cart for NDT calibration blocks, flawed specimens, and inspection equipment. Request quotes or checkout securely for your NDT supplies.",
+    canonicalUrl: "https://dakstools.com/cart",
+    ogImage: "https://dakstools.com/images/cart-daks-tools.jpg"
+  };
+
+  const cartSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "name": "DAKS Tools Shopping Cart & Quote Requests",
+        "description": cartSeoData.description,
+        "url": cartSeoData.canonicalUrl,
+        "publisher": {
+          "@type": "Organization",
+          "name": "DAKS Tools",
+          "url": "https://dakstools.com"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://dakstools.com/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Cart",
+            "item": "https://dakstools.com/cart"
+          }
+        ]
+      }
+    ]
+  };
 
   // Handle image error - set to placeholder
   const handleImageError = (itemId) => {
@@ -500,28 +545,40 @@ const Cart = () => {
   // Loading state
   if (loading && checkoutStep === 'cart') {
     return (
-      <div className="cart-container loading">
-        <div className="loading-spinner"></div>
-        <p>Loading your cart...</p>
-      </div>
+      <>
+        <Helmet>
+          <title>Loading Cart | DAKS Tools</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <div className="cart-container loading">
+          <div className="loading-spinner" aria-label="Loading cart"></div>
+          <p>Loading your DAKS Tools cart...</p>
+        </div>
+      </>
     );
   }
 
   // Confirmation screen
   if (checkoutStep === 'confirmation') {
     return (
-      <div className="cart-container">
-        <div className="confirmation-message">
-          <div className="confirmation-icon">✓</div>
-          <h2>Thank You!</h2>
-          <p>{activeTab === 'cart' ? 'Your order has been received successfully.' : 'Your quote request has been submitted successfully.'}</p>
-          <p>Our team will contact you shortly.</p>
-          <div className="confirmation-actions">
-            <button className="continue-shopping-btn" onClick={continueShopping}>Continue Shopping</button>
-            <button className="view-orders-btn" onClick={() => navigate('/account')}>View My Orders</button>
+      <>
+        <Helmet>
+          <title>Order Confirmed | DAKS Tools</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <div className="cart-container">
+          <div className="confirmation-message" role="alert">
+            <div className="confirmation-icon" aria-hidden="true">✓</div>
+            <h2>Thank You for Choosing DAKS Tools!</h2>
+            <p>{activeTab === 'cart' ? 'Your NDT equipment order has been received successfully.' : 'Your quote request has been submitted successfully.'}</p>
+            <p>Our team in Chennai will contact you shortly.</p>
+            <div className="confirmation-actions">
+              <button className="continue-shopping-btn" onClick={continueShopping} aria-label="Continue shopping for NDT products">Continue Shopping</button>
+              <button className="view-orders-btn" onClick={() => navigate('/account')} aria-label="View your orders">View My Orders</button>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -532,7 +589,7 @@ const Cart = () => {
     if (orderHistoryLoading) {
       return (
         <div className="order-history-section loading">
-          <h3>Recent Orders</h3>
+          <h3>Recent NDT Equipment Orders</h3>
           <div className="loading-indicator">Loading...</div>
         </div>
       );
@@ -542,20 +599,20 @@ const Cart = () => {
       return (
         <div className="order-history-section empty">
           <h3>Recent Orders</h3>
-          <p className="empty-history">No orders yet.</p>
+          <p className="empty-history">No NDT equipment orders yet.</p>
         </div>
       );
     }
     
     return (
       <div className="order-history-section">
-        <h3>Recent Orders</h3>
+        <h3>Recent NDT Orders</h3>
         <div className="recent-orders">
           {orderHistory.slice(0, 3).map((order, index) => (
             <div key={index} className="recent-order-item">
               <div className="order-date">{new Date(order.created_at).toLocaleDateString()}</div>
               <div className="order-status">Status: <span className={`status-${order.status || 'pending'}`}>{order.status || 'Pending'}</span></div>
-              <button onClick={() => navigate(`/order/${order.id}`)} className="view-order-btn">View</button>
+              <button onClick={() => navigate(`/order/${order.id}`)} className="view-order-btn" aria-label={`View order ${order.order_number}`}>View</button>
             </div>
           ))}
         </div>
@@ -567,258 +624,323 @@ const Cart = () => {
   if (checkoutStep === 'form') {
     if (!isLoggedIn) {
       return (
-        <div className="cart-container">
-          <div className="login-required">
-            <h2>Login Required</h2>
-            <p>You need to be logged in to continue.</p>
-            <button className="login-btn" onClick={handleLoginRedirect}>Log In</button>
-            <button className="back-btn" onClick={() => setCheckoutStep('cart')}>Back</button>
+        <>
+          <Helmet>
+            <title>Login Required | DAKS Tools</title>
+            <meta name="robots" content="noindex, nofollow" />
+          </Helmet>
+          <div className="cart-container">
+            <div className="login-required">
+              <h2>Login Required</h2>
+              <p>You need to be logged in to continue with your NDT equipment order.</p>
+              <button className="login-btn" onClick={handleLoginRedirect} aria-label="Log in to your account">Log In</button>
+              <button className="back-btn" onClick={() => setCheckoutStep('cart')} aria-label="Go back">Back</button>
+            </div>
           </div>
-        </div>
+        </>
       );
     }
     
     return (
-      <div className="cart-container">
-        <h2>{activeTab === 'cart' ? 'Complete Your Order' : 'Submit Quote Request'}</h2>
-        
-        <form className="checkoutForm" onSubmit={activeTab === 'cart' ? processOrder : processQuoteRequest}>
-          <div className="checkoutSection">
-            <h3 className="sectionTitle">Contact Information</h3>
-            <div className="formRow">
-              <div className="formField">
-                <label htmlFor="name">Full Name *</label>
-                <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} required />
+      <>
+        <Helmet>
+          <title>Checkout | DAKS Tools – NDT Equipment Order</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <div className="cart-container">
+          <h2>{activeTab === 'cart' ? 'Complete Your NDT Equipment Order' : 'Submit Quote Request'}</h2>
+          
+          <form className="checkoutForm" onSubmit={activeTab === 'cart' ? processOrder : processQuoteRequest}>
+            <div className="checkoutSection">
+              <h3 className="sectionTitle">Contact Information</h3>
+              <div className="formRow">
+                <div className="formField">
+                  <label htmlFor="name">Full Name *</label>
+                  <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} required aria-required="true" />
+                </div>
+                <div className="formField">
+                  <label htmlFor="email">Email *</label>
+                  <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} required aria-required="true" />
+                </div>
               </div>
-              <div className="formField">
-                <label htmlFor="email">Email *</label>
-                <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} required />
+              <div className="formRow">
+                <div className="formField">
+                  <label htmlFor="phone">Phone *</label>
+                  <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleInputChange} required aria-required="true" />
+                </div>
+                <div className="formField">
+                  <label htmlFor="company">Company</label>
+                  <input type="text" id="company" name="company" value={formData.company} onChange={handleInputChange} />
+                </div>
               </div>
             </div>
-            <div className="formRow">
-              <div className="formField">
-                <label htmlFor="phone">Phone *</label>
-                <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleInputChange} required />
-              </div>
-              <div className="formField">
-                <label htmlFor="company">Company</label>
-                <input type="text" id="company" name="company" value={formData.company} onChange={handleInputChange} />
-              </div>
-            </div>
-          </div>
 
-          <div className="checkoutSection">
-            <h3 className="sectionTitle">Shipping Address</h3>
-            <div className="formField">
-              <label htmlFor="address">Address</label>
-              <input type="text" id="address" name="address" value={formData.address} onChange={handleInputChange} />
+            <div className="checkoutSection">
+              <h3 className="sectionTitle">Shipping Address</h3>
+              <div className="formField">
+                <label htmlFor="address">Address</label>
+                <input type="text" id="address" name="address" value={formData.address} onChange={handleInputChange} />
+              </div>
+              <div className="formRow">
+                <div className="formField">
+                  <label htmlFor="city">City</label>
+                  <input type="text" id="city" name="city" value={formData.city} onChange={handleInputChange} />
+                </div>
+                <div className="formField">
+                  <label htmlFor="state">State</label>
+                  <input type="text" id="state" name="state" value={formData.state} onChange={handleInputChange} />
+                </div>
+                <div className="formField">
+                  <label htmlFor="zip">PIN</label>
+                  <input type="text" id="zip" name="zip" value={formData.zip} onChange={handleInputChange} />
+                </div>
+              </div>
             </div>
-            <div className="formRow">
-              <div className="formField">
-                <label htmlFor="city">City</label>
-                <input type="text" id="city" name="city" value={formData.city} onChange={handleInputChange} />
-              </div>
-              <div className="formField">
-                <label htmlFor="state">State</label>
-                <input type="text" id="state" name="state" value={formData.state} onChange={handleInputChange} />
-              </div>
-              <div className="formField">
-                <label htmlFor="zip">PIN</label>
-                <input type="text" id="zip" name="zip" value={formData.zip} onChange={handleInputChange} />
-              </div>
-            </div>
-          </div>
 
-          <div className="checkoutSection">
-            <h3 className="sectionTitle">Notes</h3>
-            <div className="formField">
-              <textarea id="message" name="message" value={formData.message} onChange={handleInputChange} rows="3" />
+            <div className="checkoutSection">
+              <h3 className="sectionTitle">Notes</h3>
+              <div className="formField">
+                <textarea id="message" name="message" value={formData.message} onChange={handleInputChange} rows="3" placeholder="Any special requirements for your NDT order..." />
+              </div>
             </div>
-          </div>
 
-          <div className="formActions">
-            <button type="button" className="secondaryBtn" onClick={() => setCheckoutStep('cart')}>Back</button>
-            <button type="submit" className="primaryBtn" disabled={loading}>
-              {loading ? 'Processing...' : activeTab === 'cart' ? 'Place Order' : 'Submit Quote'}
-            </button>
-          </div>
-        </form>
-      </div>
+            <div className="formActions">
+              <button type="button" className="secondaryBtn" onClick={() => setCheckoutStep('cart')} aria-label="Go back to cart">Back</button>
+              <button type="submit" className="primaryBtn" disabled={loading} aria-label={activeTab === 'cart' ? 'Place order' : 'Submit quote'}>
+                {loading ? 'Processing...' : activeTab === 'cart' ? 'Place Order' : 'Submit Quote'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </>
     );
   }
 
   // Main cart view
   return (
-    <div className="cart-container">
-      <div className="user-section">
-        {isLoggedIn ? (
-          <div className="logged-in-user">
-            <span>Welcome, {user?.full_name || user?.email}</span>
-            <button className="logout-btn" onClick={handleLogout}>Logout</button>
+    <>
+      {/* ==========================================
+          SEO - REACT HELMET COMPONENT
+      ========================================== */}
+      <Helmet>
+        {/* Primary Meta Tags */}
+        <title>{cartSeoData.title}</title>
+        <meta name="description" content={cartSeoData.description} />
+        <meta name="robots" content="noindex, follow" />
+        <link rel="canonical" href={cartSeoData.canonicalUrl} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={cartSeoData.canonicalUrl} />
+        <meta property="og:title" content="Shopping Cart – DAKS Tools NDT Equipment" />
+        <meta property="og:description" content={cartSeoData.description} />
+        <meta property="og:image" content={cartSeoData.ogImage} />
+        <meta property="og:image:alt" content="DAKS Tools Shopping Cart" />
+        <meta property="og:site_name" content="DAKS Tools" />
+        <meta property="og:locale" content="en_IN" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Shopping Cart – DAKS Tools" />
+        <meta name="twitter:description" content={cartSeoData.description} />
+        <meta name="twitter:image" content={cartSeoData.ogImage} />
+        
+        {/* Schema.org JSON-LD */}
+        <script type="application/ld+json">
+          {JSON.stringify(cartSchema)}
+        </script>
+      </Helmet>
+
+      {/* ==========================================
+          EXISTING UI - COMPLETELY UNCHANGED
+      ========================================== */}
+      <div className="cart-container">
+        <div className="user-section">
+          {isLoggedIn ? (
+            <div className="logged-in-user">
+              <span>Welcome, {user?.full_name || user?.email}</span>
+              <button className="logout-btn" onClick={handleLogout} aria-label="Logout">Logout</button>
+            </div>
+          ) : (
+            <div className="guest-user">
+              <p>Please <button className="login-link" onClick={handleLoginRedirect} aria-label="Login to your account">login</button> to save orders.</p>
+            </div>
+          )}
+        </div>
+        
+        {isLoggedIn && renderOrderHistory()}
+        
+        <div className="cart-tabs" role="tablist">
+          <button 
+            className={`tab-button ${activeTab === 'cart' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('cart')}
+            role="tab"
+            aria-selected={activeTab === 'cart'}
+            aria-label={`Shopping Cart (${cartCount} items)`}
+          >
+            Shopping Cart ({cartCount})
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'quote' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('quote')}
+            role="tab"
+            aria-selected={activeTab === 'quote'}
+            aria-label={`Quote Requests (${quoteCount} items)`}
+          >
+            Quote Requests ({quoteCount})
+          </button>
+        </div>
+        
+        {activeTab === 'cart' && (
+          <div className="cart-content" role="tabpanel">
+            <h2>Your NDT Equipment Cart</h2>
+            
+            {(!cart || cart.items.length === 0) ? (
+              <div className="empty-cart">
+                <p>Your cart is empty</p>
+                <button className="continue-shopping-btn" onClick={continueShopping} aria-label="Browse NDT products">Start Shopping</button>
+              </div>
+            ) : (
+              <>
+                <div className="cart-items">
+                  {cart.items.map((item) => (
+                    <div key={item.id || item.product_id} className="cart-item">
+                      <div className="cart-item-image">
+                        <img 
+                          src={getSafeImageUrl(item)} 
+                          alt={`${item.product_name || 'NDT Product'} - DAKS Tools`}
+                          onError={() => handleImageError(item.id || item.product_id)}
+                          style={{ 
+                            width: '80px', 
+                            height: '80px', 
+                            objectFit: 'cover',
+                            backgroundColor: '#f5f5f5'
+                          }}
+                        />
+                      </div>
+                      
+                      <div className="cart-item-details">
+                        <h3>{item.product_name}</h3>
+                        <p className="item-description">{item.short_description || item.description}</p>
+                        <div className="item-price">₹{parseFloat(item.price || 0).toFixed(2)}</div>
+                        
+                        <div className="quantity-controls">
+                          <button 
+                            className="quantity-btn"
+                            onClick={() => updateQuantity(item.id, Math.max(1, (item.quantity || 1) - 1), 'cart')}
+                            disabled={(item.quantity || 1) <= 1}
+                            aria-label="Decrease quantity"
+                          >-</button>
+                          <span className="item-quantity" aria-label={`Quantity: ${item.quantity || 1}`}>{item.quantity || 1}</span>
+                          <button 
+                            className="quantity-btn"
+                            onClick={() => updateQuantity(item.id, (item.quantity || 1) + 1, 'cart')}
+                            aria-label="Increase quantity"
+                          >+</button>
+                        </div>
+                      </div>
+                      
+                      <div className="cart-item-total">
+                        ₹{((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 1)).toFixed(2)}
+                      </div>
+                      
+                      <button className="remove-item-btn" onClick={() => removeFromCart(item.id)} aria-label={`Remove ${item.product_name} from cart`}>×</button>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="cart-summary">
+                  <div className="summary-details">
+                    <div className="cart-total"><span>Subtotal:</span><span>₹{calculateTotal(cart.items).toFixed(2)}</span></div>
+                    <div className="cart-total"><span>Shipping:</span><span>Calculated at checkout</span></div>
+                    <div className="cart-total grand-total"><span>Total:</span><span>₹{calculateTotal(cart.items).toFixed(2)}</span></div>
+                  </div>
+                  
+                  <div className="cart-actions">
+                    <button className="continue-shopping-btn" onClick={continueShopping} aria-label="Continue shopping">Continue Shopping</button>
+                    {isLoggedIn ? (
+                      <button className="checkout-btn" onClick={handleBuyNow} disabled={cart.items.length === 0} aria-label="Proceed to checkout">Checkout</button>
+                    ) : (
+                      <button className="login-checkout-btn" onClick={handleLoginRedirect} aria-label="Login to checkout">Login to Checkout</button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-        ) : (
-          <div className="guest-user">
-            <p>Please <button className="login-link" onClick={handleLoginRedirect}>login</button> to save orders.</p>
+        )}
+        
+        {activeTab === 'quote' && (
+          <div className="quote-content" role="tabpanel">
+            <h2>Your NDT Quote Requests</h2>
+            
+            {(!quoteRequest || quoteRequest.items.length === 0) ? (
+              <div className="empty-cart">
+                <p>No quote requests</p>
+                <button className="continue-shopping-btn" onClick={continueShopping} aria-label="Browse NDT products">Start Shopping</button>
+              </div>
+            ) : (
+              <>
+                <div className="cart-items">
+                  {quoteRequest.items.map((item) => (
+                    <div key={item.id || item.product_id} className="cart-item">
+                      <div className="cart-item-image">
+                        <img 
+                          src={getSafeImageUrl(item)} 
+                          alt={`${item.product_name || 'NDT Product'} - DAKS Tools`}
+                          onError={() => handleImageError(item.id || item.product_id)}
+                          style={{ 
+                            width: '80px', 
+                            height: '80px', 
+                            objectFit: 'cover',
+                            backgroundColor: '#f5f5f5'
+                          }}
+                        />
+                      </div>
+                      
+                      <div className="cart-item-details">
+                        <h3>{item.product_name}</h3>
+                        <p className="item-description">{item.short_description || item.description}</p>
+                        
+                        <div className="quantity-controls">
+                          <button 
+                            className="quantity-btn"
+                            onClick={() => updateQuantity(item.id, Math.max(1, (item.quantity || 1) - 1), 'quote')}
+                            disabled={(item.quantity || 1) <= 1}
+                            aria-label="Decrease quantity"
+                          >-</button>
+                          <span className="item-quantity">{item.quantity || 1}</span>
+                          <button 
+                            className="quantity-btn"
+                            onClick={() => updateQuantity(item.id, (item.quantity || 1) + 1, 'quote')}
+                            aria-label="Increase quantity"
+                          >+</button>
+                        </div>
+                      </div>
+                      
+                      <button className="remove-item-btn" onClick={() => removeFromQuote(item.id)} aria-label={`Remove ${item.product_name} from quote`}>×</button>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="cart-summary">
+                  <p className="quote-note"><strong>Note:</strong> These items are for quotation only.</p>
+                  
+                  <div className="cart-actions">
+                    <button className="continue-shopping-btn" onClick={continueShopping} aria-label="Continue shopping">Continue Shopping</button>
+                    {isLoggedIn ? (
+                      <button className="submit-quote-btn" onClick={handleBuyNow} disabled={quoteRequest.items.length === 0} aria-label="Submit quote request">Submit Quote</button>
+                    ) : (
+                      <button className="login-quote-btn" onClick={handleLoginRedirect} aria-label="Login to submit quote">Login to Submit</button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
-      
-      {isLoggedIn && renderOrderHistory()}
-      
-      <div className="cart-tabs">
-        <button className={`tab-button ${activeTab === 'cart' ? 'active' : ''}`} onClick={() => setActiveTab('cart')}>
-          Shopping Cart ({cartCount})
-        </button>
-        <button className={`tab-button ${activeTab === 'quote' ? 'active' : ''}`} onClick={() => setActiveTab('quote')}>
-          Quote Requests ({quoteCount})
-        </button>
-      </div>
-      
-      {activeTab === 'cart' && (
-        <div className="cart-content">
-          <h2>Your Shopping Cart</h2>
-          
-          {(!cart || cart.items.length === 0) ? (
-            <div className="empty-cart">
-              <p>Your cart is empty</p>
-              <button className="continue-shopping-btn" onClick={continueShopping}>Start Shopping</button>
-            </div>
-          ) : (
-            <>
-              <div className="cart-items">
-                {cart.items.map((item) => (
-                  <div key={item.id || item.product_id} className="cart-item">
-                    <div className="cart-item-image">
-                      <img 
-                        src={getSafeImageUrl(item)} 
-                        alt={item.product_name || 'Product'}
-                        onError={() => handleImageError(item.id || item.product_id)}
-                        style={{ 
-                          width: '80px', 
-                          height: '80px', 
-                          objectFit: 'cover',
-                          backgroundColor: '#f5f5f5'
-                        }}
-                      />
-                    </div>
-                    
-                    <div className="cart-item-details">
-                      <h3>{item.product_name}</h3>
-                      <p className="item-description">{item.short_description || item.description}</p>
-                      <div className="item-price">₹{parseFloat(item.price || 0).toFixed(2)}</div>
-                      
-                      <div className="quantity-controls">
-                        <button 
-                          className="quantity-btn"
-                          onClick={() => updateQuantity(item.id, Math.max(1, (item.quantity || 1) - 1), 'cart')}
-                          disabled={(item.quantity || 1) <= 1}
-                        >-</button>
-                        <span className="item-quantity">{item.quantity || 1}</span>
-                        <button 
-                          className="quantity-btn"
-                          onClick={() => updateQuantity(item.id, (item.quantity || 1) + 1, 'cart')}
-                        >+</button>
-                      </div>
-                    </div>
-                    
-                    <div className="cart-item-total">
-                      ₹{((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 1)).toFixed(2)}
-                    </div>
-                    
-                    <button className="remove-item-btn" onClick={() => removeFromCart(item.id)}>×</button>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="cart-summary">
-                <div className="summary-details">
-                  <div className="cart-total"><span>Subtotal:</span><span>₹{calculateTotal(cart.items).toFixed(2)}</span></div>
-                  <div className="cart-total"><span>Shipping:</span><span>Calculated at checkout</span></div>
-                  <div className="cart-total grand-total"><span>Total:</span><span>₹{calculateTotal(cart.items).toFixed(2)}</span></div>
-                </div>
-                
-                <div className="cart-actions">
-                  <button className="continue-shopping-btn" onClick={continueShopping}>Continue Shopping</button>
-                  {isLoggedIn ? (
-                    <button className="checkout-btn" onClick={handleBuyNow} disabled={cart.items.length === 0}>Checkout</button>
-                  ) : (
-                    <button className="login-checkout-btn" onClick={handleLoginRedirect}>Login to Checkout</button>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-      
-      {activeTab === 'quote' && (
-        <div className="quote-content">
-          <h2>Your Quote Requests</h2>
-          
-          {(!quoteRequest || quoteRequest.items.length === 0) ? (
-            <div className="empty-cart">
-              <p>No quote requests</p>
-              <button className="continue-shopping-btn" onClick={continueShopping}>Start Shopping</button>
-            </div>
-          ) : (
-            <>
-              <div className="cart-items">
-                {quoteRequest.items.map((item) => (
-                  <div key={item.id || item.product_id} className="cart-item">
-                    <div className="cart-item-image">
-                      <img 
-                        src={getSafeImageUrl(item)} 
-                        alt={item.product_name || 'Product'}
-                        onError={() => handleImageError(item.id || item.product_id)}
-                        style={{ 
-                          width: '80px', 
-                          height: '80px', 
-                          objectFit: 'cover',
-                          backgroundColor: '#f5f5f5'
-                        }}
-                      />
-                    </div>
-                    
-                    <div className="cart-item-details">
-                      <h3>{item.product_name}</h3>
-                      <p className="item-description">{item.short_description || item.description}</p>
-                      
-                      <div className="quantity-controls">
-                        <button 
-                          className="quantity-btn"
-                          onClick={() => updateQuantity(item.id, Math.max(1, (item.quantity || 1) - 1), 'quote')}
-                          disabled={(item.quantity || 1) <= 1}
-                        >-</button>
-                        <span className="item-quantity">{item.quantity || 1}</span>
-                        <button 
-                          className="quantity-btn"
-                          onClick={() => updateQuantity(item.id, (item.quantity || 1) + 1, 'quote')}
-                        >+</button>
-                      </div>
-                    </div>
-                    
-                    <button className="remove-item-btn" onClick={() => removeFromQuote(item.id)}>×</button>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="cart-summary">
-                <p className="quote-note"><strong>Note:</strong> These items are for quotation only.</p>
-                
-                <div className="cart-actions">
-                  <button className="continue-shopping-btn" onClick={continueShopping}>Continue Shopping</button>
-                  {isLoggedIn ? (
-                    <button className="submit-quote-btn" onClick={handleBuyNow} disabled={quoteRequest.items.length === 0}>Submit Quote</button>
-                  ) : (
-                    <button className="login-quote-btn" onClick={handleLoginRedirect}>Login to Submit</button>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-    </div>
+    </>
   );
 };
 

@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+
+# Allow all main pages
+Allow: /$
+Allow: /home
+Allow: /about
+Allow: /company
+Allow: /reference-standards
+Allow: /flawed-specimens
+Allow: /validation-blocks
+Allow: /news
+Allow: /blog
+Allow: /gallery
+Allow: /quickcontact
+Allow: /csra    
+Allow: /cvalues
+
+# Disallow private pages
+Disallow: /account
+Disallow: /cart
+Disallow: /login
+Disallow: /admin
+Disallow: /api
+
+# Sitemap location
+Sitemap: https://dakstools.com/sitemap.xml

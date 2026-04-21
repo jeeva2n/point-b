@@ -228,12 +228,12 @@ function AdminLogin() {
           </div>
 
           {/* Environment indicator - only in development */}
-          {process.env.NODE_ENV === 'development' && (
+          {/* {process.env.NODE_ENV === 'development' && (
             <div className="env-indicator">
               <strong>Dev Mode</strong><br />
               API: {API_URL}
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Right Section - Login Form */}

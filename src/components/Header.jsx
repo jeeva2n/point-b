@@ -201,6 +201,7 @@ function Header() {
       ]
     },
 
+
     'validation-blocks': {
       title: 'Validation Blocks',
       description: 'Certified validation blocks for equipment calibration',
@@ -208,7 +209,8 @@ function Header() {
       items: [
         { name: 'UT Validation Blocks', link: '/validation-blocks/ut' },
         { name: 'PAUT / ToFD Validation Blocks', link: '/validation-blocks/paut-tofd' },
-        { name: 'Boiler Tube PAUT Validation blocks', link: '/validation-blocks/boiler-tube' }
+        { name: 'Boiler Tube PAUT Validation blocks', link: '/validation-blocks/boiler-tube' },
+        { name: 'UT Custom Blocks', link: '/validation-blocks/ut-custom' }  // ← ADD THIS LINE
       ]
     },
 
@@ -217,6 +219,8 @@ function Header() {
       description: 'Technical resources, certifications, and tools for NDT professionals',
       image: o,
       items: [
+        { name: 'News', link: '/news' },
+        { name: 'Blogs', link: '/blog' },
         { name: 'Gallery', link: '/resources/gallery' },
         { name: 'Certifications', link: '/resources/certifications' },
         { name: 'Downloads', link: '/resources/downloads' },
@@ -231,7 +235,9 @@ function Header() {
       items: [
         { name: 'About Us', link: '/company/about' },
         { name: 'Our Team', link: '/company/team' },
-        { name: 'Our Clients', link: '/company/business-partners' }
+        { name: 'Our Clients', link: '/company/business-partners' },
+        { name: 'Corporate Values', link: '/cvalues' },
+        { name: 'CSR Activity', link: '/csra' }
       ]
     }
   };
